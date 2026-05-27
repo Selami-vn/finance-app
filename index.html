@@ -115,9 +115,32 @@ select.if option{background:#1e1e28;}
 .spend-row:last-child{border-bottom:none;}
 .spend-actions{display:flex;gap:4px;overflow:hidden;max-width:0;opacity:0;transition:max-width 0.2s ease,opacity 0.2s ease;}
 .spend-edit-mode .spend-actions{max-width:120px;opacity:1;}
+
+/* PASSWORD SCREEN */
+#pwScreen{position:fixed;inset:0;background:#0f0f13;z-index:9999;display:flex;align-items:center;justify-content:center;}
+#pwBox{background:#1a1a24;border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:36px 28px;width:min(340px,90vw);text-align:center;}
+#pwLogo{font-size:52px;margin-bottom:12px;}
+#pwTitle{font-size:20px;font-weight:700;color:#f0eff5;margin-bottom:6px;}
+#pwSub{font-size:13px;color:#5f5d72;margin-bottom:24px;}
+#pwInput{width:100%;background:#0f0f13;border:1px solid rgba(255,255,255,0.13);border-radius:10px;padding:13px 16px;color:#f0eff5;font-size:16px;font-family:'Be Vietnam Pro',sans-serif;outline:none;text-align:center;letter-spacing:3px;margin-bottom:12px;}
+#pwInput:focus{border-color:#3ecf8e;}
+#pwBtn{width:100%;background:#3ecf8e;color:#0f1a15;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Be Vietnam Pro',sans-serif;}
+#pwErr{font-size:12px;color:#f56565;margin-top:8px;min-height:18px;}
 </style>
 </head>
 <body>
+
+<div id="pwScreen">
+  <div id="pwBox">
+    <div id="pwLogo">🌸</div>
+    <div id="pwTitle">Selami</div>
+    <div id="pwSub">Nhập mật khẩu để tiếp tục</div>
+    <input type="password" id="pwInput" placeholder="••••••" onkeydown="if(event.key==='Enter')checkPw()">
+    <button id="pwBtn" onclick="checkPw()">Vào app</button>
+    <div id="pwErr"></div>
+  </div>
+</div>
+
 <div class="header">
   <div><div class="logo">Ví <span>cá nhân</span></div><div class="hdate" id="hdate"></div></div>
   <button onclick="openSettings()" style="background:var(--card2);border:1px solid var(--border);border-radius:9px;width:34px;height:34px;font-size:16px;cursor:pointer;color:var(--text2);display:flex;align-items:center;justify-content:center">⚙️</button>
@@ -1433,7 +1456,39 @@ function seedData(){
 seedData();
 
 // ── INIT ──
+
+// ── PASSWORD ──
+const PW_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'; // admin
+// sha256 của mật khẩu — đổi ở đây nếu muốn đổi pass
+
+async function sha256(msg){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function checkPw(){
+  const val=document.getElementById('pwInput').value;
+  if(!val)return;
+  const hash=await sha256(val);
+  if(hash===PW_HASH){
+    sessionStorage.setItem('selami_auth','1');
+    document.getElementById('pwScreen').style.display='none';
+  } else {
+    document.getElementById('pwErr').textContent='Mật khẩu không đúng';
+    document.getElementById('pwInput').value='';
+    document.getElementById('pwInput').focus();
+    setTimeout(()=>document.getElementById('pwErr').textContent='',2000);
+  }
+}
+
+function checkAuth(){
+  if(sessionStorage.getItem('selami_auth')==='1'){
+    document.getElementById('pwScreen').style.display='none';
+  }
+}
+
 function init(){
+  checkAuth();
   document.getElementById('hdate').textContent=new Date().toLocaleDateString('vi-VN',{weekday:'short',day:'numeric',month:'numeric',year:'numeric'});
   renderYear();renderMonth();initMI();
 }
