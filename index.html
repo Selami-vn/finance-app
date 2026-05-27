@@ -1458,19 +1458,10 @@ seedData();
 // ── INIT ──
 
 // ── PASSWORD ──
-const PW_HASH = 'ebd72b510911af3e254a030cd891cb804e1902189eee7a0f6199472eb5e4dba2';
-// sha256 của mật khẩu — đổi ở đây nếu muốn đổi pass
-
-async function sha256(msg){
-  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(msg));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-
-async function checkPw(){
+function checkPw(){
   const val=document.getElementById('pwInput').value;
   if(!val)return;
-  const hash=await sha256(val);
-  if(hash===PW_HASH){
+  if(val==='142857'){
     sessionStorage.setItem('selami_auth','1');
     document.getElementById('pwScreen').style.display='none';
   } else {
