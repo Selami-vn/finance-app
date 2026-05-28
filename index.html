@@ -875,6 +875,17 @@ function saveAlloc(){
   const key=curKey();const md=getMonthData(key);
   const oldSaving=md.alloc.saving||0;
   const oldHui=md.alloc.hui||0;
+  // Reset chốt tháng nếu đã chốt
+  if(md.closed){
+    md.closed=false;
+    md.remain=0;
+    // Hoàn lại carry over tháng sau
+    const nm=S.curMonth===11?0:S.curMonth+1;
+    const ny=S.curMonth===11?S.curYear+1:S.curYear;
+    const nk=mkKey(nm,ny);
+    const nmd=getMonthData(nk);
+    nmd.carryOver=(nmd.carryOver||0)-md.remain;
+  }
   md.alloc.chi=getMV('af_chi');
   md.alloc.hui=getMV('af_hui');  // 0 = tháng không đóng hụi
   md.alloc.saving=getMV('af_saving');
@@ -1195,6 +1206,15 @@ function addDebt(){
   else if(fromFund==='saving')lmd.alloc.saving=Math.max(0,(lmd.alloc.saving||0)-amount);
   else if(fromFund==='hui')lmd.alloc.hui=Math.max(0,(lmd.alloc.hui||0)-amount);
   else{const idx=parseInt(fromFund.replace('extra_',''));if(lmd.alloc.extra?.[idx])lmd.alloc.extra[idx].amt=Math.max(0,lmd.alloc.extra[idx].amt-amount);}
+  // Thêm quỹ "Cho X mượn" vào tháng cho mượn
+  const debtFundName=`Cho ${name} mượn`;
+  if(!lmd.alloc.extra) lmd.alloc.extra=[];
+  const existIdx=lmd.alloc.extra.findIndex(e=>e.name===debtFundName);
+  if(existIdx>=0){
+    lmd.alloc.extra[existIdx].amt=(lmd.alloc.extra[existIdx].amt||0)+amount;
+  } else {
+    lmd.alloc.extra.push({name:debtFundName,amt:amount,isDebt:true});
+  }
   S.debts.push({id:'d'+Date.now(),name,amount,date,dueDate,fromFund,note,paid:0,closed:false,payments:[]});
   save();closeModal('addDebt');renderDebt();
   document.getElementById('debtName').value='';document.getElementById('debtAmt').value='';document.getElementById('debtNote').value='';
