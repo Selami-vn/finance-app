@@ -6,6 +6,9 @@
 <title>Selami</title>
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="apple-touch-icon" href="logo.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
@@ -76,6 +79,10 @@ select.if option{background:#1e1e28;}
 .empty{text-align:center;padding:28px 16px;color:var(--text3);font-size:13px;}
 .empty .ei{font-size:30px;margin-bottom:8px;}
 ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+@media(max-width:480px){
+  .mcard{flex:0 0 calc(50% - 4px)!important;min-width:calc(50% - 4px)!important;}
+  .inc-amt{font-size:11px!important;min-width:40px!important;}
+}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);padding:10px 20px;border-radius:99px;font-size:13px;font-weight:600;z-index:500;transition:transform 0.3s;white-space:nowrap;max-width:92vw;text-align:center;}
 .toast.show{transform:translateX(-50%) translateY(0);}
 .tok{background:var(--accent);color:#0f1a15;}.terr{background:var(--red);color:#fff;}.tinfo{background:var(--blue);color:#fff;}
@@ -1768,40 +1775,28 @@ function renderGiftList(){
   if(!gifts.length){el.innerHTML='<div class="empty"><div class="ei">💝</div>Chưa có dữ liệu</div>';return;}
 
   if(giftViewMode==='timeline'){
-    // Table view sorted by date
+    // List view sorted by date (mobile-friendly)
     const sorted=[...gifts].sort((a,b)=>new Date(b.date)-new Date(a.date));
-    el.innerHTML=`<div class="card" style="overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed">
-        <colgroup>
-          <col style="width:90px">
-          <col style="width:100px">
-          <col>
-          <col style="width:200px">
-        </colgroup>
-        <thead><tr style="border-bottom:1px solid var(--border)">
-          <th style="text-align:left;padding:12px 24px;color:var(--text3);font-weight:500">Ngày</th>
-          <th style="text-align:left;padding:12px 24px;color:var(--text3);font-weight:500">Người cho</th>
-          <th style="text-align:left;padding:12px 24px;color:var(--text3);font-weight:500">Ghi chú</th>
-          <th style="text-align:right;padding:12px 24px;color:var(--text3);font-weight:500">Số tiền</th>
-        </tr></thead>
-        <tbody>${sorted.map(g=>{
-          const ri=gifts.indexOf(g);
-          const c=GIFT_COLORS[g.giver]||'var(--purple)';
-          return `<tr style="border-bottom:1px solid var(--border)">
-            <td style="padding:13px 24px;color:var(--text2);white-space:nowrap;font-size:13px">${fmtD(g.date)}</td>
-            <td style="padding:13px 24px;font-weight:600;color:${c};font-size:13px">${g.giver}</td>
-            <td style="padding:13px 24px;color:var(--text2);font-size:13px">${g.note||'—'}</td>
-            <td style="padding:13px 24px;text-align:right;font-weight:600;color:${c};white-space:nowrap">
-              +${fmt(g.amount)}
-              <span style="display:inline-flex;gap:3px;margin-left:6px;overflow:hidden;max-width:${giftEditActive?'90px':'0'};opacity:${giftEditActive?'1':'0'};transition:max-width 0.2s,opacity 0.2s;vertical-align:middle">
-                <button onclick="openEditGift(${ri})" style="background:var(--blue-bg);border:1px solid rgba(99,179,237,0.2);color:var(--blue);border-radius:5px;padding:2px 6px;font-size:10px;cursor:pointer;font-family:inherit">Sửa</button>
-                <button onclick="delGift(${ri})" style="background:var(--red-bg);border:1px solid rgba(245,101,101,0.2);color:var(--red);border-radius:5px;padding:2px 6px;font-size:10px;cursor:pointer;font-family:inherit">Xóa</button>
-              </span>
-            </td>
-          </tr>`;
-        }).join('')}</tbody>
-      </table>
-    </div>`;
+    el.innerHTML=`<div class="card">${sorted.map(g=>{
+      const ri=gifts.indexOf(g);
+      const c=GIFT_COLORS[g.giver]||'var(--purple)';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1;min-width:0;margin-right:8px">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+            <span style="font-size:12px;font-weight:600;color:${c}">${g.giver}</span>
+            <span style="font-size:11px;color:var(--text3)">${fmtD(g.date)}</span>
+          </div>
+          <div style="font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${g.note||'—'}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+          <span style="font-size:13px;font-weight:600;color:${c}">+${fmtS(g.amount)}</span>
+          ${giftEditActive?`<div style="display:flex;gap:3px">
+            <button onclick="openEditGift(${ri})" style="background:var(--blue-bg);border:1px solid rgba(99,179,237,0.2);color:var(--blue);border-radius:5px;padding:2px 7px;font-size:10px;cursor:pointer;font-family:inherit">Sửa</button>
+            <button onclick="delGift(${ri})" style="background:var(--red-bg);border:1px solid rgba(245,101,101,0.2);color:var(--red);border-radius:5px;padding:2px 7px;font-size:10px;cursor:pointer;font-family:inherit">Xóa</button>
+          </div>`:''}
+        </div>
+      </div>`;
+    }).join('')}</div>`;
   } else if(giftViewMode==='group'){
     const givers=['Anh 2','Anh 3','Anh 4','Mẹ','Khác'];
     el.innerHTML=givers.map(giver=>{
