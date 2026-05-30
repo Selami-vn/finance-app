@@ -858,7 +858,7 @@ function renderMonth(){
   const debtTotal=extraDebt.reduce((s,e)=>s+e.amt,0);
   const fixedTotal=extraFixed.reduce((s,e)=>s+e.amt,0);
   const debtExpanded=md._debtExpanded||false;
-  const fixedExpanded=md._fixedExpanded||false;
+  const fixedExpanded=md._fixedExpanded===true;
   const allocItems=[
     {name:'💸 Khoản chi tháng',amt:chiEff,color:'var(--amber)',note:md.carryOver?(md.carryOver>0?` (+${fmtS(md.carryOver)} CO)`:(` (${fmtS(md.carryOver)} âm)`)): ''},
     {name:'🐷 Hụi mẹ',amt:al.hui||0,color:'var(--purple)'},
