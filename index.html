@@ -710,11 +710,30 @@ let S = {
 };
 
 let _saveTimer = null;
+function sanitizeForFirebase(obj) {
+  if (typeof obj !== 'object' || obj === null) return obj;
+  if (Array.isArray(obj)) return obj.map(sanitizeForFirebase);
+  const out = {};
+  for (const k in obj) {
+    const safeKey = k.replace(/\//g, '__');
+    out[safeKey] = sanitizeForFirebase(obj[k]);
+  }
+  return out;
+}
+function restoreFromFirebase(obj) {
+  if (typeof obj !== 'object' || obj === null) return obj;
+  if (Array.isArray(obj)) return obj.map(restoreFromFirebase);
+  const out = {};
+  for (const k in obj) {
+    const origKey = k.replace(/__/g, '/');
+    out[origKey] = restoreFromFirebase(obj[k]);
+  }
+  return out;
+}
 function save() {
-  // Debounce: gộp nhiều save liên tiếp thành 1 lần ghi
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(() => {
-    DATA_REF.set(JSON.parse(JSON.stringify(S)));
+    DATA_REF.set(sanitizeForFirebase(JSON.parse(JSON.stringify(S))));
   }, 400);
 }
 
@@ -1943,7 +1962,8 @@ function hideLoadingOnPw(){
 function loadAndInit(){
   showLoadingOnPw('☁️ Đang kết nối...');
   DATA_REF.once('value').then(snap=>{
-    const data=snap.val();
+    const raw=snap.val();
+    const data=raw?restoreFromFirebase(raw):null;
     if(data){
       S=Object.assign({
         incomes:[],months:{},assets:[],debts:[],fixedAllocs:[],gifts:[],
