@@ -857,8 +857,8 @@ function renderMonth(){
   const extraFixed=(al.extra||[]).filter(e=>e.fromFixed);
   const debtTotal=extraDebt.reduce((s,e)=>s+e.amt,0);
   const fixedTotal=extraFixed.reduce((s,e)=>s+e.amt,0);
-  const debtExpanded=md._debtExpanded||false;
-  const fixedExpanded=md._fixedExpanded===true;
+  const debtExpanded=_expandState[key+'_debt']===true;
+  const fixedExpanded=_expandState[key+'_fixed']===true;
   const allocItems=[
     {name:'💸 Khoản chi tháng',amt:chiEff,color:'var(--amber)',note:md.carryOver?(md.carryOver>0?` (+${fmtS(md.carryOver)} CO)`:(` (${fmtS(md.carryOver)} âm)`)): ''},
     {name:'🐷 Hụi mẹ',amt:al.hui||0,color:'var(--purple)'},
@@ -922,14 +922,14 @@ function renderMonth(){
   renderSpendSection(key,md,chiEff);
 }
 
+// UI-only state for expand/collapse (not saved to Firebase)
+const _expandState={};
 function toggleDebtAlloc(key){
-  const md=getMonthData(key);
-  md._debtExpanded=!md._debtExpanded;
+  _expandState[key+'_debt']=!_expandState[key+'_debt'];
   renderMonth();
 }
 function toggleFixedAlloc(key){
-  const md=getMonthData(key);
-  md._fixedExpanded=!md._fixedExpanded;
+  _expandState[key+'_fixed']=!_expandState[key+'_fixed'];
   renderMonth();
 }
 
@@ -2073,7 +2073,7 @@ function lockApp(){
   document.getElementById('pwScreen').style.display='flex';
   document.getElementById('pwInput').value='';
   document.getElementById('pwErr').textContent='';
-  document.getElementById('pwSub').textContent='Màn hình đã khoá sau 5 phút';
+  document.getElementById('pwSub').textContent='Màn hình đã khoá sau 3 phút không thao tác';
 }
 
 function initAutoLock(){
