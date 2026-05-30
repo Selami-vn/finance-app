@@ -851,20 +851,43 @@ function renderMonth(){
     rBtn.innerHTML=`<button class="alloc-remain-btn" style="background:${pos?'var(--green-bg)':'var(--red-bg)'};color:${pos?'var(--green)':'var(--red)'};border:1px solid ${pos?'rgba(62,207,142,0.3)':'rgba(245,101,101,0.3)'}" onclick="openDistributeRemain(${remain})">${pos?'Dư':'Vượt'} ${fmtS(Math.abs(remain))} →</button>`;
   } else rBtn.innerHTML='';
 
-  // alloc items
+  // alloc items — gộp các khoản isDebt thành 1 dòng "Cho mượn"
+  const extraNormal=(al.extra||[]).filter(e=>!e.isDebt);
+  const extraDebt=(al.extra||[]).filter(e=>e.isDebt);
+  const debtTotal=extraDebt.reduce((s,e)=>s+e.amt,0);
   const allocItems=[
     {name:'💸 Khoản chi tháng',amt:chiEff,color:'var(--amber)',note:md.carryOver?(md.carryOver>0?` (+${fmtS(md.carryOver)} CO)`:(` (${fmtS(md.carryOver)} âm)`)): ''},
     {name:'🐷 Hụi mẹ',amt:al.hui||0,color:'var(--purple)'},
     {name:'💰 Tiết kiệm',amt:al.saving||0,color:'var(--blue)'},
-    ...(al.extra||[]).map(e=>({name:'📦 '+e.name,amt:e.amt,color:'var(--green)'})),
+    ...extraNormal.map(e=>({name:'📦 '+e.name,amt:e.amt,color:'var(--green)'})),
   ];
+  const debtExpanded=md._debtExpanded||false;
+  const debtRows=debtTotal>0?`
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:11px 14px;margin-bottom:7px;border-left:3px solid var(--red)">
+      <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleDebtAlloc('${key}')">
+        <div>
+          <div style="font-size:13px;font-weight:500">🤝 Cho mượn (${extraDebt.length} khoản)</div>
+          ${inc>0?`<div style="font-size:10px;color:var(--text3)">${Math.round(debtTotal/inc*100)}% lương</div>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="font-size:16px;font-weight:700;color:var(--red)">${fmt(debtTotal)}</div>
+          <span style="color:var(--text3);font-size:12px">${debtExpanded?'▲':'▼'}</span>
+        </div>
+      </div>
+      ${debtExpanded?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+        ${extraDebt.map(e=>`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px">
+          <span style="color:var(--text2)">↳ ${e.name.replace('Cho ','').replace(' mượn','')}</span>
+          <span style="color:var(--red);font-weight:600">${fmt(e.amt)}</span>
+        </div>`).join('')}
+      </div>`:''}
+    </div>`:'';
   document.getElementById('allocList').innerHTML=allocItems.filter(x=>x.amt>0).map(item=>`
     <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:11px 14px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;border-left:3px solid ${item.color}">
       <div><div style="font-size:13px;font-weight:500">${item.name}${item.note||''}</div>
         ${inc>0&&item.amt>0?`<div style="font-size:10px;color:var(--text3)">${Math.round(item.amt/inc*100)}% lương</div>`:''}
       </div>
       <div style="font-size:16px;font-weight:700;color:${item.color}">${fmt(item.amt)}</div>
-    </div>`).join('');
+    </div>`).join('')+debtRows;
 
   // month end
   if(md.closed){
@@ -875,6 +898,12 @@ function renderMonth(){
     document.getElementById('monthEndCard').style.display='';
   }
   renderSpendSection(key,md,chiEff);
+}
+
+function toggleDebtAlloc(key){
+  const md=getMonthData(key);
+  md._debtExpanded=!md._debtExpanded;
+  renderMonth();
 }
 
 function renderSpendSection(key,md,chiEff){
