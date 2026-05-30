@@ -1595,7 +1595,18 @@ function addFixedAlloc(){
   if(to&&!/^\d{2}\/\d{4}$/.test(to))return toast('Đến tháng: MM/YYYY','err');
   if(!S.fixedAllocs)S.fixedAllocs=[];
   S.fixedAllocs.push({name,amt,from:from||'',to:to||''});
-  save();renderFixedAllocList();
+  // Auto thêm vào tháng hiện tại nếu chưa có
+  const ck=curKey();
+  const md=getMonthData(ck);
+  if(!md.alloc.extra)md.alloc.extra=[];
+  const exists=md.alloc.extra.find(e=>e.name===name&&e.fromFixed);
+  if(!exists){
+    const newFa={name,amt,from:from||'',to:to||''};
+    if(isFixedAllocActive(newFa,ck)){
+      md.alloc.extra.push({name,amt,fromFixed:true});
+    }
+  }
+  save();renderFixedAllocList();renderMonth();
   document.getElementById('fa_name').value='';
   document.getElementById('fa_amt').value='';
   document.getElementById('fa_from').value='';
