@@ -40,7 +40,7 @@ body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--te
 .hero-sub{font-size:11px;color:var(--text3);margin-top:4px;}
 .stat-row{display:flex;gap:8px;margin-top:14px;}
 .stat{flex:1;background:rgba(0,0,0,0.22);border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
-.stat-l{font-size:10px;color:var(--text3);margin-bottom:3px;}
+.stat-l{font-size:12px;color:var(--text2);margin-bottom:3px;font-weight:500;}
 .stat-v{font-size:14px;font-weight:600;}
 .sec{font-size:11px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--text3);margin:18px 0 9px;}
 .row{display:flex;align-items:center;justify-content:space-between;}
@@ -151,6 +151,7 @@ select.if option{background:#1e1e28;}
   <button class="nb" onclick="showPage('salary',this)">💰 Lương</button>
   <button class="nb" onclick="showPage('assets',this)">🏦 Tài sản</button>
   <button class="nb" onclick="showPage('debt',this)">🤝 Nợ</button>
+  <button class="nb" onclick="showPage('gifts',this)"><img src="data:image/png;base64,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" style="width:20px;height:20px;vertical-align:middle;margin-right:3px"> Gia đình</button>
 </div>
 
 <!-- ══ NĂM NAY ══ -->
@@ -260,7 +261,10 @@ select.if option{background:#1e1e28;}
   </div>
   <div class="row" style="margin-bottom:9px">
     <div class="sec" style="margin:0">Các khoản tài sản</div>
-    <button class="bs" onclick="openModal('addAsset')">+ Thêm</button>
+    <div style="display:flex;gap:6px;align-items:center">
+      <button class="pencil-btn" id="assetEditBtn" onclick="toggleAssetEdit()" title="Sửa/Xóa">✏️</button>
+      <button class="bs" onclick="openModal('addAsset')">+ Thêm</button>
+    </div>
   </div>
   <div id="assetList"></div>
 </div>
@@ -279,6 +283,32 @@ select.if option{background:#1e1e28;}
   <div id="debtList"></div>
   <div class="sec">Lịch sử thu nợ</div>
   <div class="card" id="debtHistory"><div class="empty"><div class="ei">📋</div>Chưa có lịch sử</div></div>
+</div>
+
+<!-- ══ QUÀTẶNG ══ -->
+<div class="page" id="page-gifts">
+  <div class="hero" style="background:linear-gradient(135deg,#1a0d2e,#0d1a2e);border-color:rgba(183,148,244,0.2)">
+    <div class="hero-label">TỔNG ĐÃ ĐƯỢC CHO</div>
+    <div class="hero-val" style="color:var(--purple)" id="giftTotal">0 ₫</div>
+    <div class="hero-sub">Từ gia đình yêu thương 💜</div>
+    <div class="stat-row">
+      <div class="stat" style="cursor:pointer" onclick="jumpToGiver('Anh 2')"><div class="stat-l">Anh 2</div><div class="stat-v" style="color:var(--blue)" id="gift2">0 ₫</div></div>
+      <div class="stat" style="cursor:pointer" onclick="jumpToGiver('Anh 3')"><div class="stat-l">Anh 3</div><div class="stat-v" style="color:var(--green)" id="gift3">0 ₫</div></div>
+      <div class="stat" style="cursor:pointer" onclick="jumpToGiver('Anh 4')"><div class="stat-l">Anh 4</div><div class="stat-v" style="color:var(--amber)" id="gift4">0 ₫</div></div>
+      <div class="stat" style="cursor:pointer" onclick="jumpToGiver('Mẹ')"><div class="stat-l">Mẹ</div><div class="stat-v" style="color:#f472b6" id="giftMe">0 ₫</div></div>
+    </div>
+  </div>
+  <div class="row" style="margin-bottom:9px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="sec" style="margin:0">Lịch sử được cho</div>
+      <button onclick="setGiftView('timeline')" id="giftViewTimeline" title="Xem theo thứ tự thời gian" style="background:none;border:none;cursor:pointer;font-size:18px;opacity:0.4;padding:0;transition:opacity 0.2s">📖</button>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <button class="pencil-btn" id="giftEditBtn" onclick="toggleGiftEdit()" title="Sửa/Xóa">✏️</button>
+      <button class="bs" onclick="openModal('addGift')">+ Thêm</button>
+    </div>
+  </div>
+  <div id="giftList" style="display:none"></div>
 </div>
 
 <!-- ════ MODALS ════ -->
@@ -367,6 +397,63 @@ select.if option{background:#1e1e28;}
     <div style="font-size:11px;color:var(--text3);margin-bottom:16px">Nhập số âm nếu bội chi. Để trống = 0.</div>
     <button class="btn bp" onclick="doCloseMonth()">✅ Chốt tháng</button>
     <button class="bs" onclick="closeModal('closeMonth')" style="width:100%;margin-top:8px;text-align:center">Để sau</button>
+  </div>
+</div>
+
+<!-- THÊM QUÀ TẶNG -->
+<div class="mb" id="modal-addGift">
+  <div class="modal">
+    <div class="mh"></div>
+    <div class="mt">+ Ghi nhận được cho</div>
+    <div class="irow"><div class="ig"><div class="il">Người cho</div>
+      <select class="if" id="giftGiver">
+        <option value="Anh 2">👦 Anh 2</option>
+        <option value="Anh 3">👦 Anh 3</option>
+        <option value="Anh 4">👦 Anh 4</option>
+        <option value="Mẹ">👩 Mẹ</option>
+        <option value="Khác">💝 Khác</option>
+      </select>
+    </div></div>
+    <div class="irow"><div class="ig"><div class="il">Số tiền (₫)</div>
+      <input type="text" inputmode="numeric" class="if mi" id="giftAmt" placeholder="0">
+    </div></div>
+    <div class="irow"><div class="ig"><div class="il">Ngày</div>
+      <input type="date" class="if" id="giftDate">
+    </div></div>
+    <div class="irow" style="margin-bottom:14px"><div class="ig"><div class="il">Ghi chú (dịp gì)</div>
+      <input type="text" class="if" id="giftNote" placeholder="Tết, sinh nhật, vé xe...">
+    </div></div>
+    <button class="btn bp" onclick="addGift()">Lưu</button>
+    <button class="bs" onclick="closeModal('addGift')" style="width:100%;margin-top:8px;text-align:center">Hủy</button>
+  </div>
+</div>
+
+<!-- SỬA QUÀ TẶNG -->
+<div class="mb" id="modal-editGift">
+  <div class="modal">
+    <div class="mh"></div>
+    <div class="mt">✏️ Sửa</div>
+    <input type="hidden" id="egIdx">
+    <div class="irow"><div class="ig"><div class="il">Người cho</div>
+      <select class="if" id="egGiver">
+        <option value="Anh 2">👦 Anh 2</option>
+        <option value="Anh 3">👦 Anh 3</option>
+        <option value="Anh 4">👦 Anh 4</option>
+        <option value="Mẹ">👩 Mẹ</option>
+        <option value="Khác">💝 Khác</option>
+      </select>
+    </div></div>
+    <div class="irow"><div class="ig"><div class="il">Số tiền (₫)</div>
+      <input type="text" inputmode="numeric" class="if mi" id="egAmt" placeholder="0">
+    </div></div>
+    <div class="irow"><div class="ig"><div class="il">Ngày</div>
+      <input type="date" class="if" id="egDate">
+    </div></div>
+    <div class="irow" style="margin-bottom:14px"><div class="ig"><div class="il">Ghi chú</div>
+      <input type="text" class="if" id="egNote">
+    </div></div>
+    <button class="btn bp" onclick="saveEditGift()">Lưu</button>
+    <button class="bs" onclick="closeModal('editGift')" style="width:100%;margin-top:8px;text-align:center">Hủy</button>
   </div>
 </div>
 
@@ -646,7 +733,7 @@ function showPage(id,btn){
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   if(btn)btn.classList.add('active');
-  ({year:renderYear,month:renderMonth,salary:renderSalary,assets:renderAssets,debt:renderDebt})[id]?.();
+  ({year:renderYear,month:renderMonth,salary:renderSalary,assets:renderAssets,debt:renderDebt,gifts:renderGifts})[id]?.();
 }
 function changeMonth(d){
   S.curMonth+=d;if(S.curMonth<0){S.curMonth=11;S.curYear--;}if(S.curMonth>11){S.curMonth=0;S.curYear++;}
@@ -663,8 +750,7 @@ function renderYear(){
     const key=mkKey(m,y);const inc=incomeForKey(key);const md=S.months[key];
     const sp=md?.alloc?.chi||0;  // khoản chi được phân bổ
     const hui=md?.alloc?.hui||0;const sav=md?.alloc?.saving||0;
-    const realSpent=spentForKey(key);
-    if(inc>0||sp>0){ti+=inc;ts+=realSpent;th+=hui;tsav+=sav;mdata.push({m,inc,sp,sav});}
+    if(inc>0||sp>0){ti+=inc;ts+=sp;th+=hui;tsav+=sav;mdata.push({m,inc,sp,sav});}
   }
   document.getElementById('yearIncome').textContent=fmt(ti);
   document.getElementById('yearSpent').textContent=fmt(ts);
@@ -1172,14 +1258,14 @@ function renderAssets(){
   const el=document.getElementById('assetList');
   if(!S.assets.length){el.innerHTML='<div class="empty"><div class="ei">🏦</div>Chưa có tài sản nào</div>';return;}
   el.innerHTML=S.assets.map((a,i)=>`
-    <div class="asset-card" style="border-left-color:${ACOL[a.type]||'var(--green)'}">
+    <div class="asset-card ${assetEditMode?'asset-edit-mode':''}" style="border-left-color:${ACOL[a.type]||'var(--green)'}">
       <div class="row">
         <div><div style="font-size:14px;font-weight:600">${AI[a.type]||'📦'} ${a.name}</div>
           <div style="font-size:11px;color:var(--text3);margin-top:2px">${ATYPE[a.type]||''}</div>
         </div>
         <div style="text-align:right">
           <div style="font-size:17px;font-weight:700;color:${ACOL[a.type]||'var(--green)'}">${fmt(a.balance)}</div>
-          <div style="display:flex;gap:5px;margin-top:7px;justify-content:flex-end;flex-wrap:wrap">
+          <div style="display:${assetEditMode?'flex':'none'};gap:5px;margin-top:7px;justify-content:flex-end;flex-wrap:wrap">
             <button class="bs be" onclick="openEditAsset(${i})" style="padding:3px 8px;font-size:11px">Sửa</button>
             <button class="bs" onclick="openAssetLog(${i})" style="padding:3px 8px;font-size:11px">Lịch sử</button>
             <button class="bs ba" onclick="openTransferAsset(${i})" style="padding:3px 8px;font-size:11px">Chuyển</button>
@@ -1305,7 +1391,7 @@ function renderDebt(){
           }).join('')}
           <button class="bs bg2" onclick="openAddDebtForPerson('${p.name}');event.stopPropagation()" style="width:100%;text-align:center;margin-top:4px">+ Cho ${p.name} mượn thêm</button>
         </div>`:''}
-        ${!expanded?`<button class="bs" onclick="toggleDebtPerson('${p.name.toLowerCase().trim()}')" style="width:100%;margin-top:8px;text-align:center;font-size:11px">Xem chi tiết ▾</button>`:''}
+
       </div>`;
     }).join('');
   }
@@ -1453,6 +1539,316 @@ function importData(input){
   };
   reader.readAsText(file);
   input.value=''; // reset để có thể import lại cùng file
+}
+
+
+// ══════════════════════════════════════════
+// QUÀTẶNG
+// ══════════════════════════════════════════
+let giftEditMode={};
+
+const GIFT_COLORS={'Anh 2':'var(--blue)','Anh 3':'var(--green)','Anh 4':'var(--amber)','Mẹ':'#f472b6','Khác':'var(--purple)'};
+const GIFT_ICONS={'Anh 2':'👦','Anh 3':'👦','Anh 4':'👦','Mẹ':'👩','Khác':'💝'};
+
+function jumpToGiver(giver){
+  giftViewMode='group';
+  document.getElementById('giftList').style.display='block';
+  document.getElementById('giftViewTimeline').style.opacity='0.4';
+  giftEditMode[giver]=true;
+  renderGiftList();
+  setTimeout(()=>{
+    const el=document.getElementById('giver_'+giver.replace(' ','_'));
+    if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+  },100);
+}
+
+function renderGifts(){
+  const gifts=S.gifts||[];
+  const totals={};
+  let grand=0;
+  gifts.forEach(g=>{totals[g.giver]=(totals[g.giver]||0)+g.amount;grand+=g.amount;});
+  document.getElementById('giftTotal').textContent=fmt(grand);
+  document.getElementById('gift2').textContent=fmt(totals['Anh 2']||0);
+  document.getElementById('gift3').textContent=fmt(totals['Anh 3']||0);
+  document.getElementById('gift4').textContent=fmt(totals['Anh 4']||0);
+  document.getElementById('giftMe').textContent=fmt(totals['Mẹ']||0);
+
+  const el=document.getElementById('giftList');
+  if(!gifts.length){el.innerHTML='<div class="empty"><div class="ei">💝</div>Chưa có dữ liệu</div>';return;}
+
+  const givers=['Anh 2','Anh 3','Anh 4','Mẹ','Khác'];
+  // List rendering is handled by renderGiftList() triggered by view icons
+  if(giftViewMode) renderGiftList();
+}
+
+function toggleGiftGiver(g){giftEditMode[g]=!giftEditMode[g];renderGifts();}
+
+function addGift(){
+  const giver=document.getElementById('giftGiver').value;
+  const amount=getMV('giftAmt');
+  const date=document.getElementById('giftDate').value||today();
+  const note=document.getElementById('giftNote').value.trim();
+  if(amount<=0)return toast('Nhập số tiền','err');
+  if(!S.gifts)S.gifts=[];
+  S.gifts.push({giver,amount,date,note});
+  save();closeModal('addGift');renderGifts();
+  document.getElementById('giftAmt').value='';document.getElementById('giftNote').value='';
+  toast('Đã lưu ✓');
+}
+
+function openEditGift(i){
+  const g=S.gifts[i];
+  document.getElementById('egIdx').value=i;
+  document.getElementById('egGiver').value=g.giver;
+  document.getElementById('egAmt').value=g.amount?g.amount.toLocaleString('vi-VN'):'';
+  document.getElementById('egDate').value=g.date;
+  document.getElementById('egNote').value=g.note||'';
+  openModal('editGift');
+}
+function saveEditGift(){
+  const i=parseInt(document.getElementById('egIdx').value);
+  const amt=getMV('egAmt');
+  if(amt<=0)return toast('Nhập số tiền','err');
+  S.gifts[i]={...S.gifts[i],giver:document.getElementById('egGiver').value,amount:amt,date:document.getElementById('egDate').value,note:document.getElementById('egNote').value.trim()};
+  save();closeModal('editGift');renderGifts();toast('Đã cập nhật ✓');
+}
+function delGift(i){if(confirm('Xóa?')){S.gifts.splice(i,1);save();renderGifts();}}
+
+
+// ── GIFT SEED DATA ──
+function seedGifts(){
+  if(S.gifts && S.gifts.length>0) return;
+  S.gifts=[
+    // 2022
+    {giver:'Anh 3',amount:1000000,date:'2022-02-01',note:'Tết 2022'},
+    {giver:'Anh 3',amount:2000000,date:'2022-03-25',note:''},
+    {giver:'Anh 3',amount:2000000,date:'2022-04-14',note:''},
+    {giver:'Anh 3',amount:1500000,date:'2022-05-14',note:''},
+    {giver:'Anh 3',amount:1500000,date:'2022-06-16',note:''},
+    {giver:'Anh 3',amount:500000,date:'2022-06-28',note:''},
+    {giver:'Anh 3',amount:2000000,date:'2022-07-08',note:''},
+    {giver:'Anh 3',amount:1500000,date:'2022-08-15',note:''},
+    {giver:'Anh 3',amount:1000000,date:'2022-09-02',note:'Tiền mặt'},
+    {giver:'Anh 3',amount:1500000,date:'2022-10-10',note:''},
+    {giver:'Anh 3',amount:1500000,date:'2022-11-12',note:''},
+    {giver:'Anh 3',amount:2500000,date:'2022-12-09',note:''},
+    // 2023
+    {giver:'Anh 4',amount:2200000,date:'2023-01-22',note:'Tết 2023'},
+    {giver:'Anh 3',amount:500000,date:'2023-01-22',note:'Tết 2023'},
+    {giver:'Anh 2',amount:1000000,date:'2023-01-22',note:'Tết 2023'},
+    {giver:'Anh 4',amount:1000000,date:'2023-02-16',note:'Đi ĐL'},
+    {giver:'Anh 3',amount:500000,date:'2023-02-16',note:''},
+    {giver:'Anh 3',amount:2000000,date:'2023-03-12',note:''},
+    {giver:'Anh 4',amount:1000000,date:'2023-04-10',note:''},
+    {giver:'Anh 3',amount:2000000,date:'2023-04-11',note:'Để dành 17 triệu'},
+    {giver:'Anh 4',amount:500000,date:'2023-04-30',note:'Lễ'},
+    {giver:'Anh 3',amount:1000000,date:'2023-04-30',note:'Lễ'},
+    {giver:'Anh 3',amount:1500000,date:'2023-05-14',note:''},
+    {giver:'Anh 3',amount:2000000,date:'2023-06-11',note:''},
+    {giver:'Anh 3',amount:2000000,date:'2023-07-11',note:''},
+    {giver:'Anh 4',amount:500000,date:'2023-07-11',note:''},
+    {giver:'Anh 4',amount:500000,date:'2023-07-17',note:'Viết bảng tường trình'},
+    {giver:'Anh 3',amount:2000000,date:'2023-08-11',note:''},
+    {giver:'Anh 4',amount:500000,date:'2023-09-02',note:''},
+    {giver:'Anh 4',amount:500000,date:'2023-09-02',note:'Vé xe'},
+    {giver:'Anh 3',amount:2600000,date:'2023-09-04',note:'CK 2.5tr + 100k lễ'},
+    {giver:'Anh 3',amount:2500000,date:'2023-10-11',note:'Cho dư tiền điện'},
+    {giver:'Anh 4',amount:500000,date:'2023-10-12',note:''},
+    {giver:'Anh 3',amount:2500000,date:'2023-11-11',note:''},
+    {giver:'Anh 4',amount:500000,date:'2023-11-13',note:'Mua sữa tắm'},
+    {giver:'Anh 2',amount:500000,date:'2023-11-23',note:''},
+    {giver:'Anh 4',amount:500000,date:'2023-11-24',note:''},
+    {giver:'Anh 4',amount:1000000,date:'2023-11-28',note:'Nhắn rụng tóc anh 4 cho tiền'},
+    {giver:'Anh 4',amount:2000000,date:'2023-11-30',note:'Cho tiền vé xe'},
+    {giver:'Anh 3',amount:2500000,date:'2023-12-12',note:''},
+    {giver:'Anh 4',amount:2000000,date:'2023-12-27',note:'Mua đồ tết'},
+    // 2024
+    {giver:'Anh 3',amount:2500000,date:'2024-01-11',note:''},
+    {giver:'Anh 3',amount:500000,date:'2024-02-10',note:'Tết 2024'},
+    {giver:'Anh 2',amount:600000,date:'2024-02-10',note:'Tết 2024'},
+    {giver:'Anh 4',amount:2000000,date:'2024-02-10',note:'Tết 2024'},
+    {giver:'Anh 3',amount:1000000,date:'2024-02-14',note:'Cho tiền đi vô'},
+    {giver:'Anh 4',amount:500000,date:'2024-02-14',note:''},
+    {giver:'Anh 4',amount:1000000,date:'2024-04-09',note:'Cho tiền vé xe lễ 30/4'},
+    {giver:'Anh 4',amount:500000,date:'2024-04-17',note:''},
+    {giver:'Anh 3',amount:2000000,date:'2024-04-29',note:'Lễ'},
+    {giver:'Anh 3',amount:1000000,date:'2024-07-11',note:''},
+    {giver:'Anh 4',amount:500000,date:'2024-07-17',note:''},
+    {giver:'Anh 4',amount:500000,date:'2024-07-18',note:''},
+    {giver:'Anh 4',amount:1000000,date:'2024-08-21',note:''},
+    {giver:'Anh 3',amount:1000000,date:'2024-10-01',note:'Cho sinh nhật'},
+    {giver:'Anh 4',amount:1300000,date:'2024-11-09',note:'Vé xe Tuấn Tú'},
+    {giver:'Anh 4',amount:2000000,date:'2024-12-11',note:'Cho mua đồ tết'},
+    {giver:'Anh 4',amount:1400000,date:'2024-12-11',note:'Vé xe Chín Nghĩa'},
+    {giver:'Anh 3',amount:1000000,date:'2024-12-30',note:'Mua đồ tết'},
+    {giver:'Mẹ',amount:4100000,date:'2025-01-25',note:'Bùng binh của mẹ'},
+    // 2025
+    {giver:'Anh 4',amount:2500000,date:'2025-01-29',note:'Tết 2025'},
+    {giver:'Anh 3',amount:500000,date:'2025-01-29',note:'Tết 2025'},
+    {giver:'Anh 2',amount:500000,date:'2025-01-29',note:'Tết 2025'},
+    {giver:'Anh 3',amount:2000000,date:'2025-02-04',note:'Cho tiền vô SG xúc động'},
+    {giver:'Anh 4',amount:1000000,date:'2025-04-06',note:'Vé xe lễ'},
+    {giver:'Anh 3',amount:2000000,date:'2025-05-01',note:'Cho xấp 100 tờ 20k'},
+    {giver:'Anh 3',amount:1000000,date:'2025-09-02',note:'Cho xấp 100 tờ 10k mới tinh'},
+    {giver:'Anh 4',amount:1000000,date:'2025-08-11',note:'Vé xe'},
+    {giver:'Anh 4',amount:1000000,date:'2025-10-15',note:'Cho sinh nhật Mỹ'},
+    {giver:'Anh 4',amount:1000000,date:'2025-12-13',note:'Vé xe tết'},
+    {giver:'Anh 4',amount:2000000,date:'2025-12-31',note:'Anh 4 được thưởng tết'},
+    // 2026
+    {giver:'Anh 4',amount:1000000,date:'2026-02-04',note:'Anh 4 cho gửi xe về quê'},
+    {giver:'Anh 2',amount:500000,date:'2026-02-01',note:'Tết 2026'},
+    {giver:'Anh 3',amount:1000000,date:'2026-02-01',note:'Tết 2026'},
+    {giver:'Anh 4',amount:2500000,date:'2026-02-01',note:'Tết 2026'},
+    {giver:'Mẹ',amount:3000000,date:'2026-02-01',note:'Bùng binh mẹ'},
+    {giver:'Anh 3',amount:500000,date:'2026-02-01',note:'Tết 2026'},
+    {giver:'Anh 4',amount:1000000,date:'2026-04-11',note:''},
+  ];
+  save();
+}
+seedGifts();
+
+
+// ── ASSET EDIT TOGGLE ──
+let assetEditMode=false;
+function toggleAssetEdit(){
+  assetEditMode=!assetEditMode;
+  const btn=document.getElementById('assetEditBtn');
+  if(btn)btn.classList.toggle('active',assetEditMode);
+  renderAssets();
+}
+
+// ── GIFT VIEW ──
+let giftViewMode=null; // null=hidden, 'timeline', 'group'
+let giftEditActive=false;
+
+function setGiftView(mode){
+  const list=document.getElementById('giftList');
+  if(giftViewMode===mode){
+    giftViewMode=null;
+    list.style.display='none';
+    document.getElementById('giftViewTimeline').style.opacity='0.4';
+    return;
+  }
+  giftViewMode=mode;
+  list.style.display='block';
+  document.getElementById('giftViewTimeline').style.opacity='1';
+  renderGiftList();
+}
+
+function toggleGiftEdit(){
+  giftEditActive=!giftEditActive;
+  const btn=document.getElementById('giftEditBtn');
+  if(btn)btn.classList.toggle('active',giftEditActive);
+  if(giftViewMode) renderGiftList();
+}
+
+function renderGiftList(){
+  const gifts=S.gifts||[];
+  const el=document.getElementById('giftList');
+  if(!gifts.length){el.innerHTML='<div class="empty"><div class="ei">💝</div>Chưa có dữ liệu</div>';return;}
+
+  if(giftViewMode==='timeline'){
+    // Table view sorted by date
+    const sorted=[...gifts].sort((a,b)=>new Date(b.date)-new Date(a.date));
+    el.innerHTML=`<div class="card" style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed">
+        <colgroup>
+          <col style="width:90px">
+          <col style="width:100px">
+          <col>
+          <col style="width:200px">
+        </colgroup>
+        <thead><tr style="border-bottom:1px solid var(--border)">
+          <th style="text-align:left;padding:12px 24px;color:var(--text3);font-weight:500">Ngày</th>
+          <th style="text-align:left;padding:12px 24px;color:var(--text3);font-weight:500">Người cho</th>
+          <th style="text-align:left;padding:12px 24px;color:var(--text3);font-weight:500">Ghi chú</th>
+          <th style="text-align:right;padding:12px 24px;color:var(--text3);font-weight:500">Số tiền</th>
+        </tr></thead>
+        <tbody>${sorted.map(g=>{
+          const ri=gifts.indexOf(g);
+          const c=GIFT_COLORS[g.giver]||'var(--purple)';
+          return `<tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:13px 24px;color:var(--text2);white-space:nowrap;font-size:13px">${fmtD(g.date)}</td>
+            <td style="padding:13px 24px;font-weight:600;color:${c};font-size:13px">${g.giver}</td>
+            <td style="padding:13px 24px;color:var(--text2);font-size:13px">${g.note||'—'}</td>
+            <td style="padding:13px 24px;text-align:right;font-weight:600;color:${c};white-space:nowrap">
+              +${fmt(g.amount)}
+              <span style="display:inline-flex;gap:3px;margin-left:6px;overflow:hidden;max-width:${giftEditActive?'90px':'0'};opacity:${giftEditActive?'1':'0'};transition:max-width 0.2s,opacity 0.2s;vertical-align:middle">
+                <button onclick="openEditGift(${ri})" style="background:var(--blue-bg);border:1px solid rgba(99,179,237,0.2);color:var(--blue);border-radius:5px;padding:2px 6px;font-size:10px;cursor:pointer;font-family:inherit">Sửa</button>
+                <button onclick="delGift(${ri})" style="background:var(--red-bg);border:1px solid rgba(245,101,101,0.2);color:var(--red);border-radius:5px;padding:2px 6px;font-size:10px;cursor:pointer;font-family:inherit">Xóa</button>
+              </span>
+            </td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>`;
+  } else if(giftViewMode==='group'){
+    const givers=['Anh 2','Anh 3','Anh 4','Mẹ','Khác'];
+    el.innerHTML=givers.map(giver=>{
+      const items=gifts.filter(g=>g.giver===giver).sort((a,b)=>new Date(b.date)-new Date(a.date));
+      if(!items.length)return '';
+      const total=items.reduce((s,g)=>s+g.amount,0);
+      const c=GIFT_COLORS[giver]||'var(--purple)';
+
+      // Group by year — 4 ô/hàng
+      const byYear={};
+      items.forEach(g=>{
+        const y=new Date(g.date).getFullYear();
+        if(!byYear[y])byYear[y]=[];
+        byYear[y].push(g);
+      });
+      const years=Object.keys(byYear).sort((a,b)=>b-a);
+
+      // Build year cards (4 per row)
+      const yearCards=years.map(yyyy=>{
+        const yItems=byYear[yyyy];
+        const yTotal=yItems.reduce((s,g)=>s+g.amount,0);
+        const expanded=giftEditMode[giver+'_'+yyyy];
+        return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--rs);padding:12px 13px;flex:0 0 calc(25% - 6px);min-width:calc(25% - 6px);box-sizing:border-box;border-top:2px solid ${c}">
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px">${yyyy}</div>
+          <div style="font-size:15px;font-weight:700;color:${c}">+${fmtS(yTotal)}</div>
+          <div style="height:1px;background:var(--border);margin:7px 0"></div>
+          ${yItems.map(g=>{
+            const ri=gifts.indexOf(g);
+            return `<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:3px 0;border-bottom:1px solid var(--border)">
+              <div style="min-width:0;flex:1;margin-right:6px">
+                <div style="font-size:11px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${g.note||'—'}</div>
+                <div style="font-size:10px;color:var(--text3)">${fmtD(g.date)}</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0">
+                <span style="font-size:11px;font-weight:600;color:${c}">+${fmtS(g.amount)}</span>
+                ${giftEditActive?`<div style="display:flex;gap:2px">
+                  <button onclick="openEditGift(${ri})" style="background:var(--blue-bg);border:1px solid rgba(99,179,237,0.2);color:var(--blue);border-radius:4px;padding:1px 5px;font-size:9px;cursor:pointer;font-family:inherit">Sửa</button>
+                  <button onclick="delGift(${ri})" style="background:var(--red-bg);border:1px solid rgba(245,101,101,0.2);color:var(--red);border-radius:4px;padding:1px 5px;font-size:9px;cursor:pointer;font-family:inherit">Xóa</button>
+                </div>`:''}
+              </div>
+            </div>`;
+          }).join('')}
+          <div style="display:flex;justify-content:space-between;margin-top:7px;padding-top:5px;border-top:1px solid var(--border)">
+            <span style="font-size:10px;color:var(--text3)">${yItems.length} lần</span>
+            <span style="font-size:12px;font-weight:700;color:${c}">+${fmt(yTotal)}</span>
+          </div>
+        </div>`;
+      });
+      // pad to multiple of 4
+      while(yearCards.length%4!==0) yearCards.push('<div style="flex:0 0 calc(25% - 6px);min-width:calc(25% - 6px)"></div>');
+
+      return `<div id="giver_${giver.replace(' ','_')}" style="margin-bottom:24px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span style="font-size:22px">${GIFT_ICONS[giver]}</span>
+          <div>
+            <div style="font-size:16px;font-weight:700;color:${c}">${giver}</div>
+            <div style="font-size:11px;color:var(--text3)">${items.length} lần · tổng ${fmt(total)}</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">${yearCards.join('')}</div>
+        <div style="background:${c}10;border:1px solid ${c}25;border-radius:10px;padding:11px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+          <div style="font-size:11px;color:var(--text3)">${years.length} năm · ${items.length} lần</div>
+          <div style="font-size:17px;font-weight:700;color:${c}">+${fmt(total)}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
 }
 
 // ── SEED DATA ──
