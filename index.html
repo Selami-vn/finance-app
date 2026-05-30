@@ -720,7 +720,7 @@ function save() {
 
 // ── utils ──
 const fmt=n=>new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND',maximumFractionDigits:0}).format(n||0);
-const fmtS=n=>{const a=Math.abs(n);return a>=1e9?(n/1e9).toFixed(1)+' tỷ':a>=1e6?(n/1e6).toFixed(1)+' tr':new Intl.NumberFormat('vi-VN').format(n||0);};
+const fmtS=n=>{const a=Math.abs(n);return a>=1e9?(n/1e9).toFixed(1)+' tỷ':a>=1e5?(n/1e6).toFixed(1)+' tr':new Intl.NumberFormat('vi-VN').format(n||0);};
 const fmtD=ds=>{const d=new Date(ds);return `${d.getDate()}/${d.getMonth()+1}/${String(d.getFullYear()).slice(2)}`;};
 const today=()=>new Date().toISOString().split('T')[0];
 const mkKey=(m,y)=>`${String(m+1).padStart(2,'0')}/${y}`;
@@ -1080,7 +1080,7 @@ function doCloseMonth(){
 function autoSalMonth(){
   const v=document.getElementById('salDate').value;if(!v)return;
   const d=new Date(v);const el=document.getElementById('salMonth');
-  if(!el.value)el.value=`${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  el.value=`${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
 }
 function addIncome(){
   const type=document.getElementById('salType').value;const amount=getMV('salAmt');
@@ -1107,6 +1107,15 @@ function toggleSalEdit(yyyy){
 }
 
 function renderSalary(){
+  // Auto-fill ngày hôm nay và tháng lương khi vào tab
+  const salDateEl=document.getElementById('salDate');
+  const salMonthEl=document.getElementById('salMonth');
+  if(salDateEl&&!salDateEl.value){
+    const _d=new Date();
+    salDateEl.value=today();
+    if(salMonthEl&&!salMonthEl.value)
+      salMonthEl.value=String(_d.getMonth()+1).padStart(2,'0')+'/'+_d.getFullYear();
+  }
   const el=document.getElementById('salaryHistory');
   if(!S.incomes.length){el.innerHTML='<div class="empty"><div class="ei">💰</div>Chưa có dữ liệu</div>';return;}
   const groups={};
@@ -1437,6 +1446,12 @@ function openModal(id){
   if(id==='closeMonth')openCloseMonthModal();
   if(id==='addSpend')document.getElementById('spendDate').value=today();
   if(id==='addDebt'){populateDebtFunds();document.getElementById('debtDate').value=today();}
+  if(id==='addIncome'){
+    const _d=new Date();
+    document.getElementById('salDate').value=today();
+    document.getElementById('salMonth').value=String(_d.getMonth()+1).padStart(2,'0')+'/'+_d.getFullYear();
+  }
+  if(id==='addGift')document.getElementById('giftDate').value=today();
   document.getElementById('modal-'+id).classList.add('open');
   setTimeout(initMI,50);
 }
@@ -1948,7 +1963,7 @@ function loadAndInit(){
     }
     hideLoadingOnPw();
     document.getElementById('hdate').textContent=new Date().toLocaleDateString('vi-VN',{weekday:'short',day:'numeric',month:'numeric',year:'numeric'});
-    renderYear();renderMonth();initMI();
+    renderYear();renderMonth();renderSalary();renderAssets();renderDebt();renderGifts();initMI();
   }).catch(err=>{
     console.error('Firebase error:',err);
     document.getElementById('pwErr').style.color='var(--red)';
