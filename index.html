@@ -7,6 +7,8 @@
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="apple-touch-icon" href="logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <style>
 :root{
   --bg:#0f0f13;--bg2:#16161d;--bg3:#1e1e28;--card:#1a1a24;--card2:#222230;
@@ -127,7 +129,6 @@ select.if option{background:#1e1e28;}
 #pwBtn{width:100%;background:#3ecf8e;color:#0f1a15;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Be Vietnam Pro',sans-serif;}
 #pwErr{font-size:12px;color:#f56565;margin-top:8px;min-height:18px;}
 </style>
-<script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
 
@@ -667,42 +668,33 @@ const ACOL={saving:'var(--green)',bank:'var(--blue)',hui:'var(--purple)',other:'
 const HUI_MONTHLY_OUT=2700000; // đóng hụi mỗi tháng
 const HUI_MONTHLY_IN=3000000;  // nhận về tài sản mỗi tháng (có lãi)
 
-// Migrate từ key cũ nếu có
-(function migrateLegacy(){
-  const keys=['vi5','viCaNhan_v4','viCaNhan_v3','viCaNhan_v2','viCaNhan'];
-  if(localStorage.getItem('vi6')) return; // đã có rồi
-  for(const k of keys){
-    const old=localStorage.getItem(k);
-    if(!old) continue;
-    try{
-      const d=JSON.parse(old);
-      // Map old structure to new
-      const migrated={
-        incomes: d.incomes||[],
-        months: d.months||{},
-        assets: d.assets||[],
-        debts: d.debts||[],
-        fixedAllocs: d.fixedAllocs||[],
-        curMonth: d.curMonth??new Date().getMonth(),
-        curYear: d.curYear??new Date().getFullYear(),
-      };
-      localStorage.setItem('vi6', JSON.stringify(migrated));
-      console.log('Migrated from', k);
-      break;
-    }catch(e){}
-  }
-})();
+// ── FIREBASE SETUP ──
+const firebaseConfig = {
+  databaseURL: "https://selami-money-default-rtdb.asia-southeast1.firebasedatabase.app"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const DATA_REF = db.ref('vi6');
 
-let S=JSON.parse(localStorage.getItem('vi6')||'null')||{
+let S = {
   incomes:[],
   months:{},
   assets:[],
   debts:[],
   fixedAllocs:[],
+  gifts:[],
   curMonth:new Date().getMonth(),
   curYear:new Date().getFullYear(),
 };
-const save=()=>localStorage.setItem('vi6',JSON.stringify(S));
+
+let _saveTimer = null;
+function save() {
+  // Debounce: gộp nhiều save liên tiếp thành 1 lần ghi
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => {
+    DATA_REF.set(JSON.parse(JSON.stringify(S)));
+  }, 400);
+}
 
 // ── utils ──
 const fmt=n=>new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND',maximumFractionDigits:0}).format(n||0);
@@ -1093,9 +1085,6 @@ function toggleSalEdit(yyyy){
 }
 
 function renderSalary(){
-  // Auto fill today's date if empty
-  const sd=document.getElementById('salDate');
-  if(sd&&!sd.value)sd.value=today();
   const el=document.getElementById('salaryHistory');
   if(!S.incomes.length){el.innerHTML='<div class="empty"><div class="ei">💰</div>Chưa có dữ liệu</div>';return;}
   const groups={};
@@ -1426,8 +1415,6 @@ function openModal(id){
   if(id==='closeMonth')openCloseMonthModal();
   if(id==='addSpend')document.getElementById('spendDate').value=today();
   if(id==='addDebt'){populateDebtFunds();document.getElementById('debtDate').value=today();}
-  if(id==='addGift')document.getElementById('giftDate').value=today();
-  if(id==='payDebt')document.getElementById('payDebtAmt').value='';
   document.getElementById('modal-'+id).classList.add('open');
   setTimeout(initMI,50);
 }
@@ -1736,9 +1723,9 @@ function seedGifts(){
     {giver:'Anh 3',amount:500000,date:'2026-02-01',note:'Tết 2026'},
     {giver:'Anh 4',amount:1000000,date:'2026-04-11',note:''},
   ];
-  save();
+  // save() được gọi từ loadAndInit sau khi seed xong
 }
-seedGifts();
+// seedGifts() được gọi từ loadAndInit khi Firebase trống
 
 
 // ── ASSET EDIT TOGGLE ──
@@ -1900,9 +1887,7 @@ function seedData(){
     {id:1010,type:'commission',amount:2800000, date:'2026-01-12',salaryMonth:'01/2026',note:''},
     {id:1011,type:'salary',    amount:9000000, date:'2026-01-06',salaryMonth:'01/2026',note:''},
   ];
-  save();
 }
-seedData();
 
 // ── INIT ──
 
@@ -1913,6 +1898,7 @@ function checkPw(){
   if(val==='142857'){
     sessionStorage.setItem('selami_auth','1');
     document.getElementById('pwScreen').style.display='none';
+    loadAndInit();
   } else {
     document.getElementById('pwErr').textContent='Mật khẩu không đúng';
     document.getElementById('pwInput').value='';
@@ -1921,16 +1907,57 @@ function checkPw(){
   }
 }
 
+function showLoadingOnPw(msg){
+  document.getElementById('pwErr').style.color='var(--accent)';
+  document.getElementById('pwErr').textContent=msg||'Đang tải...';
+}
+function hideLoadingOnPw(){
+  document.getElementById('pwErr').style.color='';
+  document.getElementById('pwErr').textContent='';
+}
+
+function loadAndInit(){
+  showLoadingOnPw('☁️ Đang kết nối...');
+  DATA_REF.once('value').then(snap=>{
+    const data=snap.val();
+    if(data){
+      S=Object.assign({
+        incomes:[],months:{},assets:[],debts:[],fixedAllocs:[],gifts:[],
+        curMonth:new Date().getMonth(),curYear:new Date().getFullYear()
+      }, data);
+      // Đảm bảo arrays hợp lệ
+      if(!Array.isArray(S.incomes))S.incomes=[];
+      if(!Array.isArray(S.assets))S.assets=[];
+      if(!Array.isArray(S.debts))S.debts=[];
+      if(!Array.isArray(S.fixedAllocs))S.fixedAllocs=[];
+      if(!Array.isArray(S.gifts))S.gifts=[];
+      if(!S.months||typeof S.months!=='object')S.months={};
+    } else {
+      // Firebase trống — seed data lần đầu
+      seedData();
+      seedGifts();
+      save();
+    }
+    hideLoadingOnPw();
+    document.getElementById('hdate').textContent=new Date().toLocaleDateString('vi-VN',{weekday:'short',day:'numeric',month:'numeric',year:'numeric'});
+    renderYear();renderMonth();initMI();
+  }).catch(err=>{
+    console.error('Firebase error:',err);
+    document.getElementById('pwErr').style.color='var(--red)';
+    document.getElementById('pwErr').textContent='⚠️ Lỗi kết nối. Thử lại?';
+  });
+}
+
 function checkAuth(){
   if(sessionStorage.getItem('selami_auth')==='1'){
     document.getElementById('pwScreen').style.display='none';
+    loadAndInit();
   }
 }
 
 function init(){
   checkAuth();
   document.getElementById('hdate').textContent=new Date().toLocaleDateString('vi-VN',{weekday:'short',day:'numeric',month:'numeric',year:'numeric'});
-  renderYear();renderMonth();initMI();
 }
 init();
 </script>
