@@ -26,7 +26,7 @@
   --accent:#3ecf8e;--r:14px;--rs:9px;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
+body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;padding-bottom:env(safe-area-inset-bottom);}
 .header{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
 .logo{font-size:18px;letter-spacing:-0.3px;}
 .logo span{color:var(--accent);}
@@ -80,8 +80,23 @@ select.if option{background:#1e1e28;}
 .empty .ei{font-size:30px;margin-bottom:8px;}
 ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
 @media(max-width:480px){
+  /* Lương grid: 2 cột thay 3 */
   .mcard{flex:0 0 calc(50% - 4px)!important;min-width:calc(50% - 4px)!important;}
+  /* Income row gọn hơn */
   .inc-amt{font-size:11px!important;min-width:40px!important;}
+  .inc-row-left{gap:5px!important;}
+  /* Stat row: 2x2 thay vì 1 hàng ngang */
+  .stat-row{flex-wrap:wrap!important;}
+  .stat-row .stat{flex:0 0 calc(50% - 4px)!important;min-width:0!important;}
+  /* Hero val nhỏ hơn xíu */
+  .hero-val{font-size:24px!important;}
+  /* Padding tổng thể */
+  .page{padding:12px!important;}
+  /* Modal padding bottom để không bị thanh home bar che */
+  .modal{padding-bottom:48px!important;}
+  /* Gia đình year cards: 2 cột thay 4 */
+  .gift-year-grid{flex-wrap:wrap!important;}
+  .gift-year-card{flex:0 0 calc(50% - 4px)!important;min-width:calc(50% - 4px)!important;}
 }
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);padding:10px 20px;border-radius:99px;font-size:13px;font-weight:600;z-index:500;transition:transform 0.3s;white-space:nowrap;max-width:92vw;text-align:center;}
 .toast.show{transform:translateX(-50%) translateY(0);}
@@ -1814,12 +1829,11 @@ function renderGiftList(){
       });
       const years=Object.keys(byYear).sort((a,b)=>b-a);
 
-      // Build year cards (4 per row)
+      // Build year cards (4 per row on desktop, 2 per row on mobile)
       const yearCards=years.map(yyyy=>{
         const yItems=byYear[yyyy];
         const yTotal=yItems.reduce((s,g)=>s+g.amount,0);
-        const expanded=giftEditMode[giver+'_'+yyyy];
-        return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--rs);padding:12px 13px;flex:0 0 calc(25% - 6px);min-width:calc(25% - 6px);box-sizing:border-box;border-top:2px solid ${c}">
+        return `<div class="gift-year-card" style="background:var(--card);border:1px solid var(--border);border-radius:var(--rs);padding:12px 13px;flex:0 0 calc(25% - 6px);min-width:calc(25% - 6px);box-sizing:border-box;border-top:2px solid ${c}">
           <div style="font-size:13px;font-weight:600;margin-bottom:4px">${yyyy}</div>
           <div style="font-size:15px;font-weight:700;color:${c}">+${fmtS(yTotal)}</div>
           <div style="height:1px;background:var(--border);margin:7px 0"></div>
@@ -1846,7 +1860,7 @@ function renderGiftList(){
         </div>`;
       });
       // pad to multiple of 4
-      while(yearCards.length%4!==0) yearCards.push('<div style="flex:0 0 calc(25% - 6px);min-width:calc(25% - 6px)"></div>');
+      while(yearCards.length%4!==0) yearCards.push('<div class="gift-year-card" style="flex:0 0 calc(25% - 6px);min-width:calc(25% - 6px)"></div>');
 
       return `<div id="giver_${giver.replace(' ','_')}" style="margin-bottom:24px">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
@@ -1856,7 +1870,7 @@ function renderGiftList(){
             <div style="font-size:11px;color:var(--text3)">${items.length} lần · tổng ${fmt(total)}</div>
           </div>
         </div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px">${yearCards.join('')}</div>
+        <div class="gift-year-grid" style="display:flex;flex-wrap:wrap;gap:8px">${yearCards.join('')}</div>
         <div style="background:${c}10;border:1px solid ${c}25;border-radius:10px;padding:11px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:6px">
           <div style="font-size:11px;color:var(--text3)">${years.length} năm · ${items.length} lần</div>
           <div style="font-size:17px;font-weight:700;color:${c}">+${fmt(total)}</div>
