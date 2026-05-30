@@ -466,6 +466,7 @@ select.if option{background:#1e1e28;}
     <div class="irow"><div class="ig"><div class="il">Loại</div>
       <select class="if" id="eiType">
         <option value="salary">💼 Lương</option>
+        <option value="family">🏠 Gia đình</option>
         <option value="commission">🏆 Hoa hồng</option>
         <option value="bonus">🎁 Thưởng</option>
         <option value="other">💵 Khác</option>
@@ -657,8 +658,8 @@ select.if option{background:#1e1e28;}
 
 <script>
 const MONTHS=['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
-const IL={salary:'Lương',commission:'Hoa hồng',bonus:'Thưởng',other:'Khác'};
-const II={salary:'💼',commission:'🏆',bonus:'🎁',other:'💵'};
+const IL={salary:'Lương',commission:'Hoa hồng',bonus:'Thưởng',other:'Khác',family:'Gia đình'};
+const II={salary:'💼',commission:'🏆',bonus:'🎁',other:'💵',family:'🏠'};
 const AI={saving:'💰',bank:'🏦',hui:'🐷',other:'📦'};
 const ATYPE={saving:'Tiết kiệm tích lũy',bank:'Gửi ngân hàng',hui:'Hụi',other:'Khác'};
 const ACOL={saving:'var(--green)',bank:'var(--blue)',hui:'var(--purple)',other:'var(--amber)'};
@@ -1091,6 +1092,9 @@ function toggleSalEdit(yyyy){
 }
 
 function renderSalary(){
+  // Auto fill today's date if empty
+  const sd=document.getElementById('salDate');
+  if(sd&&!sd.value)sd.value=today();
   const el=document.getElementById('salaryHistory');
   if(!S.incomes.length){el.innerHTML='<div class="empty"><div class="ei">💰</div>Chưa có dữ liệu</div>';return;}
   const groups={};
@@ -1421,6 +1425,8 @@ function openModal(id){
   if(id==='closeMonth')openCloseMonthModal();
   if(id==='addSpend')document.getElementById('spendDate').value=today();
   if(id==='addDebt'){populateDebtFunds();document.getElementById('debtDate').value=today();}
+  if(id==='addGift')document.getElementById('giftDate').value=today();
+  if(id==='payDebt')document.getElementById('payDebtAmt').value='';
   document.getElementById('modal-'+id).classList.add('open');
   setTimeout(initMI,50);
 }
@@ -1590,10 +1596,15 @@ function addGift(){
   const note=document.getElementById('giftNote').value.trim();
   if(amount<=0)return toast('Nhập số tiền','err');
   if(!S.gifts)S.gifts=[];
-  S.gifts.push({giver,amount,date,note});
-  save();closeModal('addGift');renderGifts();
+  const giftId='g'+Date.now();
+  S.gifts.push({giver,amount,date,note,incomeId:giftId});
+  // Tự động thêm vào thu nhập tháng tương ứng
+  const d=new Date(date);
+  const sm=`${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  S.incomes.push({id:giftId,type:'family',amount,date,salaryMonth:sm,note:`${giver}${note?' - '+note:''}`});
+  save();closeModal('addGift');renderGifts();renderSalary();renderYear();renderMonth();
   document.getElementById('giftAmt').value='';document.getElementById('giftNote').value='';
-  toast('Đã lưu ✓');
+  toast(`Đã lưu + thêm vào thu nhập tháng ${sm} ✓`,'info');
 }
 
 function openEditGift(i){
@@ -1609,10 +1620,31 @@ function saveEditGift(){
   const i=parseInt(document.getElementById('egIdx').value);
   const amt=getMV('egAmt');
   if(amt<=0)return toast('Nhập số tiền','err');
-  S.gifts[i]={...S.gifts[i],giver:document.getElementById('egGiver').value,amount:amt,date:document.getElementById('egDate').value,note:document.getElementById('egNote').value.trim()};
-  save();closeModal('editGift');renderGifts();toast('Đã cập nhật ✓');
+  const giver=document.getElementById('egGiver').value;
+  const date=document.getElementById('egDate').value;
+  const note=document.getElementById('egNote').value.trim();
+  S.gifts[i]={...S.gifts[i],giver,amount:amt,date,note};
+  // Sync income if linked
+  if(S.gifts[i].incomeId){
+    const inc=S.incomes.find(x=>x.id===S.gifts[i].incomeId);
+    if(inc){
+      const d=new Date(date);
+      inc.amount=amt;inc.date=date;inc.note=`${giver}${note?' - '+note:''}`;
+      inc.salaryMonth=`${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+    }
+  }
+  save();closeModal('editGift');renderGifts();renderSalary();renderYear();toast('Đã cập nhật ✓');
 }
-function delGift(i){if(confirm('Xóa?')){S.gifts.splice(i,1);save();renderGifts();}}
+function delGift(i){
+  if(!confirm('Xóa?'))return;
+  const g=S.gifts[i];
+  if(g.incomeId){
+    const idx=S.incomes.findIndex(x=>x.id===g.incomeId);
+    if(idx>=0)S.incomes.splice(idx,1);
+  }
+  S.gifts.splice(i,1);
+  save();renderGifts();renderSalary();renderYear();renderMonth();
+}
 
 
 // ── GIFT SEED DATA ──
