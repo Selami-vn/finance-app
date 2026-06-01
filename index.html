@@ -416,9 +416,29 @@ select.if option{background:#1e1e28;}
     <div class="mh"></div>
     <div class="mt">📅 Chốt <span id="closeMonthTitle"></span></div>
     <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:14px" id="closeMonthSummary"></div>
-    <div class="il">Số dư khoản chi còn lại thực tế (₫)</div>
-    <input type="text" inputmode="numeric" class="if" id="closeRemain" placeholder="0 hoặc số âm" style="margin-bottom:8px" oninput="fmtCloseRemain(this)">
-    <div style="font-size:11px;color:var(--text3);margin-bottom:16px">Nhập số âm nếu bội chi. Để trống = 0.</div>
+    <div class="il" style="margin-bottom:10px">Số dư thực tế theo từng nguồn (có thể âm)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px">💸 Tiền mặt</div>
+        <input type="text" inputmode="numeric" class="if" id="cr_cash" placeholder="0" style="margin-bottom:0" oninput="updateCloseTotal()">
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px">🏦 Vietcombank</div>
+        <input type="text" inputmode="numeric" class="if" id="cr_vcb" placeholder="0" style="margin-bottom:0" oninput="updateCloseTotal()">
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px">📱 Momo</div>
+        <input type="text" inputmode="numeric" class="if" id="cr_momo" placeholder="0" style="margin-bottom:0" oninput="updateCloseTotal()">
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px">💳 Tín dụng</div>
+        <input type="text" inputmode="numeric" class="if" id="cr_credit" placeholder="0" style="margin-bottom:0" oninput="updateCloseTotal()">
+      </div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <span style="font-size:13px;color:var(--text2)">Tổng số dư thực tế</span>
+      <span style="font-size:16px;font-weight:700" id="closeTotalDisplay">0 ₫</span>
+    </div>
     <button class="btn bp" onclick="doCloseMonth()">✅ Chốt tháng</button>
     <button class="bs" onclick="closeModal('closeMonth')" style="width:100%;margin-top:8px;text-align:center">Để sau</button>
   </div>
@@ -1140,9 +1160,19 @@ function openCloseMonthModal(){
   document.getElementById('closeMonthSummary').innerHTML=`Thu nhập: <strong class="g">${fmt(inc)}</strong><br>Khoản chi được chia: <strong class="a">${fmt(chiEff)}</strong><br>Đã chi: <strong class="r">${fmt(spent)}</strong><br>Dự kiến còn lại: <strong>${fmt(chiEff-spent)}</strong>`;
   document.getElementById('closeRemain').value='';
 }
+function getCloseRawNum(id){
+  const el=document.getElementById(id);
+  if(!el||!el.value.trim())return 0;
+  return parseInt(el.value.replace(/[^0-9\-]/g,''))||0;
+}
+function updateCloseTotal(){
+  const total=getCloseRawNum('cr_cash')+getCloseRawNum('cr_vcb')+getCloseRawNum('cr_momo')+getCloseRawNum('cr_credit');
+  const el=document.getElementById('closeTotalDisplay');
+  if(el){el.textContent=fmt(total);el.style.color=total>=0?'var(--green)':'var(--red)';}
+}
 function doCloseMonth(){
   const key=curKey();const md=getMonthData(key);
-  const remain=getRawNum('closeRemain');
+  const remain=getCloseRawNum('cr_cash')+getCloseRawNum('cr_vcb')+getCloseRawNum('cr_momo')+getCloseRawNum('cr_credit');
   md.remain=remain;md.closed=true;
   const nm=S.curMonth===11?0:S.curMonth+1;const ny=S.curMonth===11?S.curYear+1:S.curYear;
   const nk=mkKey(nm,ny);const nmd=getMonthData(nk);
