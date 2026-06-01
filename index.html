@@ -142,15 +142,7 @@ select.if option{background:#1e1e28;}
 
 /* PASSWORD SCREEN */
 #pwScreen{position:fixed;inset:0;background:#0f0f13;z-index:9999;display:flex;align-items:center;justify-content:center;overflow:hidden;}
-#pwBg{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
-.pw-petal{position:absolute;object-fit:contain;opacity:0.07;animation:pwFloat linear infinite;}
-@keyframes pwFloat{
-  0%  {transform:translate(0,0) rotate(0deg) scale(1);}
-  25% {transform:translate(var(--tx1),var(--ty1)) rotate(90deg) scale(var(--s1));}
-  50% {transform:translate(var(--tx2),var(--ty2)) rotate(200deg) scale(var(--s2));}
-  75% {transform:translate(var(--tx3),var(--ty3)) rotate(300deg) scale(var(--s3));}
-  100%{transform:translate(0,0) rotate(360deg) scale(1);}
-}
+#pwBg{position:absolute;inset:0;pointer-events:none;display:block;}
 #pwBox{background:rgba(18,18,28,0.95);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:36px 28px;width:min(340px,90vw);text-align:center;position:relative;z-index:1;}
 #pwLogo{margin-bottom:12px;}
 #pwTitle{font-size:20px;font-weight:700;color:#f0eff5;margin-bottom:6px;}
@@ -164,30 +156,85 @@ select.if option{background:#1e1e28;}
 <body>
 
 <div id="pwScreen">
-  <div id="pwBg"></div>
+  <canvas id="pwBg"></canvas>
 <script>
 (function(){
-  const bg=document.getElementById('pwBg');
-  if(!bg)return;
+  const canvas=document.getElementById('pwBg');
+  const ctx=canvas.getContext('2d');
   const src='https://raw.githubusercontent.com/Selami-vn/finance-app/main/logo.png';
-  const count=5;
-  for(let i=0;i<count;i++){
-    const img=document.createElement('img');
-    img.src=src;
-    img.className='pw-petal';
-    const sz=(80+Math.random()*120);
-    img.style.cssText=[
-      `width:${sz}px`,`height:${sz}px`,
-      `left:${Math.random()*90}%`,`top:${Math.random()*90}%`,
-      `--tx1:${-50+Math.random()*200}px`,`--ty1:${-50+Math.random()*200}px`,
-      `--tx2:${-100+Math.random()*300}px`,`--ty2:${-100+Math.random()*200}px`,
-      `--tx3:${-50+Math.random()*150}px`,`--ty3:${50+Math.random()*200}px`,
-      `--s1:${0.7+Math.random()*0.8}`,`--s2:${0.5+Math.random()*1.2}`,`--s3:${0.8+Math.random()*0.6}`,
-      `animation-duration:${12+Math.random()*18}s`,
-      `animation-delay:${-Math.random()*15}s`,
-      `opacity:${0.04+Math.random()*0.07}`
-    ].join(';');
-    bg.appendChild(img);
+  const img=new Image();
+  img.crossOrigin='anonymous';
+  
+  function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
+  resize();
+  window.addEventListener('resize',resize);
+
+  const COUNT=9;
+  const flowers=[];
+  
+  img.onload=function(){
+    for(let i=0;i<COUNT;i++){
+      const sz=100+Math.random()*160;
+      flowers.push({
+        x:Math.random()*window.innerWidth,
+        y:Math.random()*window.innerHeight,
+        sz,
+        vx:(Math.random()-0.5)*1.2,
+        vy:(Math.random()-0.5)*1.2,
+        rot:Math.random()*Math.PI*2,
+        vr:(Math.random()-0.5)*0.012,
+        opacity:0.12+Math.random()*0.14
+      });
+    }
+    animate();
+  };
+  img.src=src;
+
+  function collide(a,b){
+    const dx=b.x-a.x, dy=b.y-a.y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    const minD=(a.sz+b.sz)*0.42;
+    if(dist<minD&&dist>0){
+      const nx=dx/dist, ny=dy/dist;
+      const relVx=a.vx-b.vx, relVy=a.vy-b.vy;
+      const dot=relVx*nx+relVy*ny;
+      if(dot>0){
+        a.vx-=dot*nx; a.vy-=dot*ny;
+        b.vx+=dot*nx; b.vy+=dot*ny;
+        // separate
+        const overlap=(minD-dist)/2;
+        a.x-=nx*overlap; a.y-=ny*overlap;
+        b.x+=nx*overlap; b.y+=ny*overlap;
+      }
+    }
+  }
+
+  function animate(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const W=canvas.width, H=canvas.height;
+    
+    flowers.forEach(f=>{
+      f.x+=f.vx; f.y+=f.vy; f.rot+=f.vr;
+      const r=f.sz*0.5;
+      if(f.x-r<0){f.x=r;f.vx=Math.abs(f.vx);}
+      if(f.x+r>W){f.x=W-r;f.vx=-Math.abs(f.vx);}
+      if(f.y-r<0){f.y=r;f.vy=Math.abs(f.vy);}
+      if(f.y+r>H){f.y=H-r;f.vy=-Math.abs(f.vy);}
+    });
+
+    for(let i=0;i<flowers.length;i++)
+      for(let j=i+1;j<flowers.length;j++)
+        collide(flowers[i],flowers[j]);
+
+    flowers.forEach(f=>{
+      ctx.save();
+      ctx.globalAlpha=f.opacity;
+      ctx.translate(f.x,f.y);
+      ctx.rotate(f.rot);
+      ctx.drawImage(img,-f.sz/2,-f.sz/2,f.sz,f.sz);
+      ctx.restore();
+    });
+    requestAnimationFrame(animate);
   }
 })();
 </script>
