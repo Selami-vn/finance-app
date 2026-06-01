@@ -143,7 +143,7 @@ select.if option{background:#1e1e28;}
 /* PASSWORD SCREEN */
 #pwScreen{position:fixed;inset:0;background:#0f0f13;z-index:9999;display:flex;align-items:center;justify-content:center;overflow:hidden;}
 #pwBg{position:absolute;inset:0;pointer-events:none;display:block;}
-#pwBox{background:rgba(18,18,28,0.95);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:36px 28px;width:min(340px,90vw);text-align:center;position:relative;z-index:1;}
+#pwBox{background:rgba(18,18,28,0.95);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:32px 24px;width:min(320px,80vw);text-align:center;position:relative;z-index:1;}
 #pwLogo{margin-bottom:12px;}
 #pwTitle{font-size:20px;font-weight:700;color:#f0eff5;margin-bottom:6px;}
 #pwSub{font-size:13px;color:#5f5d72;margin-bottom:24px;}
@@ -174,13 +174,13 @@ select.if option{background:#1e1e28;}
   
   img.onload=function(){
     for(let i=0;i<COUNT;i++){
-      const sz=100+Math.random()*160;
+      const sz=60+Math.random()*80;
       flowers.push({
         x:Math.random()*window.innerWidth,
         y:Math.random()*window.innerHeight,
         sz,
-        vx:(Math.random()-0.5)*1.2,
-        vy:(Math.random()-0.5)*1.2,
+        vx:(Math.random()-0.5)*2.0,
+        vy:(Math.random()-0.5)*2.0,
         rot:Math.random()*Math.PI*2,
         vr:(Math.random()-0.5)*0.012,
         opacity:0.12+Math.random()*0.14
