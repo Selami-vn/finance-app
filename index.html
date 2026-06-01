@@ -141,7 +141,10 @@ select.if option{background:#1e1e28;}
 .spend-edit-mode .spend-actions{max-width:120px;opacity:1;}
 
 /* PASSWORD SCREEN */
-#pwScreen{position:fixed;inset:0;background:#0f0f13;z-index:9999;display:flex;align-items:center;justify-content:center;}
+#pwScreen{position:fixed;inset:0;background:#0f0f13;z-index:9999;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+#pwBg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+#pwBg img{width:70vmin;height:70vmin;object-fit:contain;opacity:0.06;animation:pwSpin 20s linear infinite;}
+@keyframes pwSpin{from{transform:rotate(0deg) scale(1);}50%{transform:rotate(180deg) scale(1.08);}to{transform:rotate(360deg) scale(1);}}
 #pwBox{background:#1a1a24;border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:36px 28px;width:min(340px,90vw);text-align:center;}
 #pwLogo{margin-bottom:12px;}
 #pwTitle{font-size:20px;font-weight:700;color:#f0eff5;margin-bottom:6px;}
@@ -155,8 +158,9 @@ select.if option{background:#1e1e28;}
 <body>
 
 <div id="pwScreen">
+  <div id="pwBg"><img src="https://raw.githubusercontent.com/Selami-vn/finance-app/main/logo.png"></div>
   <div id="pwBox">
-    <div id="pwLogo"><img src="https://raw.githubusercontent.com/Selami-vn/finance-app/main/logo.png" style="width:80px;height:80px;object-fit:contain;border-radius:16px"></div>
+    <div id="pwLogo"><img src="https://raw.githubusercontent.com/Selami-vn/finance-app/main/logo.png" style="width:160px;height:160px;object-fit:contain"></div>
     <div id="pwTitle">Selami</div>
     <div id="pwSub">Nhập mật khẩu để tiếp tục</div>
     <input type="password" id="pwInput" placeholder="••••••" onkeydown="if(event.key==='Enter')checkPw()">
@@ -901,7 +905,7 @@ function renderMonth(){
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <div style="font-size:16px;font-weight:700;color:var(--blue)">${fmt(fixedTotal)}</div>
-          <span style="color:var(--text3);font-size:12px">${fixedExpanded?'▲':'▼'}</span>
+          
         </div>
       </div>
       ${fixedExpanded?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
@@ -920,7 +924,7 @@ function renderMonth(){
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <div style="font-size:16px;font-weight:700;color:var(--red)">${fmt(debtTotal)}</div>
-          <span style="color:var(--text3);font-size:12px">${debtExpanded?'▲':'▼'}</span>
+          
         </div>
       </div>
       ${debtExpanded?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
@@ -945,7 +949,7 @@ function renderMonth(){
         <div style="font-size:13px;font-weight:500;color:var(--green);margin-bottom:4px">✅ Đã chốt tháng</div>
         <div style="font-size:12px;color:var(--text2)">Khai báo: ${fmt(md.remain)} · Carry over ${md.remain>=0?'+':''}${fmt(md.remain)} → tháng sau</div>
       </div>
-      <button onclick="openModal('closeMonth')" style="background:var(--card);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap">✏️ Sửa lại</button>
+      <button onclick="openModal('closeMonth')" style="background:none;border:none;color:var(--text2);font-size:16px;cursor:pointer;padding:4px 8px">✏️</button>
     </div>`;
     document.getElementById('monthEndCard').style.display='none';
   } else {
@@ -1001,7 +1005,7 @@ function renderSpendSection(key,md,chiEff){
         <div style="display:flex;gap:6px;align-items:center" onclick="event.stopPropagation()">
           <button class="bs" onclick="openModal('addSpend')" style="font-size:12px;padding:6px 12px">+ Ghi</button>
           <button class="pencil-btn ${spendEditMode?'active':''}" onclick="toggleSpendEdit()" title="Sửa/Xóa">✏️</button>
-          <span style="color:var(--text3);font-size:12px">${spendExpanded?'▲':'▼'}</span>
+          
         </div>
       </div>
       ${spendExpanded?spendRows:''}
