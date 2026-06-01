@@ -143,7 +143,7 @@ select.if option{background:#1e1e28;}
 /* PASSWORD SCREEN */
 #pwScreen{position:fixed;inset:0;background:#0f0f13;z-index:9999;display:flex;align-items:center;justify-content:center;}
 #pwBox{background:#1a1a24;border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:36px 28px;width:min(340px,90vw);text-align:center;}
-#pwLogo{font-size:52px;margin-bottom:12px;}
+#pwLogo{margin-bottom:12px;}
 #pwTitle{font-size:20px;font-weight:700;color:#f0eff5;margin-bottom:6px;}
 #pwSub{font-size:13px;color:#5f5d72;margin-bottom:24px;}
 #pwInput{width:100%;background:#0f0f13;border:1px solid rgba(255,255,255,0.13);border-radius:10px;padding:13px 16px;color:#f0eff5;font-size:16px;font-family:'Be Vietnam Pro',sans-serif;outline:none;text-align:center;letter-spacing:3px;margin-bottom:12px;}
@@ -156,7 +156,7 @@ select.if option{background:#1e1e28;}
 
 <div id="pwScreen">
   <div id="pwBox">
-    <div id="pwLogo">🌸</div>
+    <div id="pwLogo"><img src="https://raw.githubusercontent.com/Selami-vn/finance-app/main/logo.png" style="width:80px;height:80px;object-fit:contain;border-radius:16px"></div>
     <div id="pwTitle">Selami</div>
     <div id="pwSub">Nhập mật khẩu để tiếp tục</div>
     <input type="password" id="pwInput" placeholder="••••••" onkeydown="if(event.key==='Enter')checkPw()">
@@ -222,7 +222,7 @@ select.if option{background:#1e1e28;}
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <div id="allocRemainBtn"></div>
-        <button class="bs" onclick="openModal('allocate')" style="font-size:11px;padding:5px 10px">✏️ Phân bổ</button>
+        <button class="bs" onclick="openModal('allocate')" style="font-size:11px;padding:5px 10px">✏️</button>
       </div>
     </div>
     <div class="pbar" id="allocBarLine"><div class="pfill" id="allocBarFill" style="width:0%;background:var(--green)"></div></div>
@@ -254,7 +254,7 @@ select.if option{background:#1e1e28;}
         </select>
       </div>
       <div class="ig"><div class="il">Số tiền (₫)</div>
-        <input type="text" inputmode="numeric" class="if mi" id="salAmt" placeholder="0">
+        <input type="text" inputmode="numeric" class="if mi" id="salAmt" placeholder="0" oninput="formatMoneyInput(this)">
       </div>
     </div>
     <div class="irow">
@@ -377,7 +377,7 @@ select.if option{background:#1e1e28;}
     <div class="mh"></div>
     <div class="mt">+ Ghi chi tiêu</div>
     <div class="irow"><div class="ig"><div class="il">Số tiền (₫)</div>
-      <input type="text" inputmode="numeric" class="if mi" id="spendAmt" placeholder="0">
+      <input type="text" inputmode="numeric" class="if mi" id="spendAmt" placeholder="0" oninput="formatMoneyInput(this)">
     </div></div>
     <div class="irow"><div class="ig"><div class="il">Mô tả</div>
       <input type="text" class="if" id="spendDesc" placeholder="Ăn uống, xăng xe...">
@@ -420,19 +420,19 @@ select.if option{background:#1e1e28;}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
       <div>
         <div style="font-size:11px;color:var(--text3);margin-bottom:4px">💸 Tiền mặt</div>
-        <input type="text" inputmode="numeric" class="if" id="cr_cash" placeholder="0" style="margin-bottom:0" oninput="updateCloseTotal()">
+        <input type="text" inputmode="numeric" class="if" id="cr_cash" placeholder="0" style="margin-bottom:0" oninput="formatMoneyInput(this);updateCloseTotal()">
       </div>
       <div>
         <div style="font-size:11px;color:var(--text3);margin-bottom:4px">🏦 Vietcombank</div>
-        <input type="text" inputmode="numeric" class="if" id="cr_vcb" placeholder="0" style="margin-bottom:0" oninput="updateCloseTotal()">
+        <input type="text" inputmode="numeric" class="if" id="cr_vcb" placeholder="0" style="margin-bottom:0" oninput="formatMoneyInput(this);updateCloseTotal()">
       </div>
       <div>
         <div style="font-size:11px;color:var(--text3);margin-bottom:4px">📱 Momo</div>
-        <input type="text" inputmode="numeric" class="if" id="cr_momo" placeholder="0" style="margin-bottom:0" oninput="updateCloseTotal()">
+        <input type="text" inputmode="numeric" class="if" id="cr_momo" placeholder="0" style="margin-bottom:0" oninput="formatMoneyInput(this);updateCloseTotal()">
       </div>
       <div>
         <div style="font-size:11px;color:var(--text3);margin-bottom:4px">💳 Tín dụng</div>
-        <input type="text" inputmode="numeric" class="if" id="cr_credit" placeholder="0" style="margin-bottom:0" oninput="updateCloseTotal()">
+        <input type="text" inputmode="numeric" class="if" id="cr_credit" placeholder="0" style="margin-bottom:0" oninput="formatMoneyInput(this);updateCloseTotal()">
       </div>
     </div>
     <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -459,7 +459,7 @@ select.if option{background:#1e1e28;}
       </select>
     </div></div>
     <div class="irow"><div class="ig"><div class="il">Số tiền (₫)</div>
-      <input type="text" inputmode="numeric" class="if mi" id="giftAmt" placeholder="0">
+      <input type="text" inputmode="numeric" class="if mi" id="giftAmt" placeholder="0" oninput="formatMoneyInput(this)">
     </div></div>
     <div class="irow"><div class="ig"><div class="il">Ngày</div>
       <input type="date" class="if" id="giftDate">
@@ -621,7 +621,7 @@ select.if option{background:#1e1e28;}
       <input type="text" class="if" id="debtName" placeholder="Tên...">
     </div></div>
     <div class="irow"><div class="ig"><div class="il">Số tiền (₫)</div>
-      <input type="text" inputmode="numeric" class="if mi" id="debtAmt" placeholder="0">
+      <input type="text" inputmode="numeric" class="if mi" id="debtAmt" placeholder="0" oninput="formatMoneyInput(this)">
     </div></div>
     <div class="irow"><div class="ig"><div class="il">Ngày cho mượn</div>
       <input type="date" class="if" id="debtDate">
@@ -679,7 +679,7 @@ select.if option{background:#1e1e28;}
       <input type="text" class="if" id="fa_name" placeholder="Hụi mẹ, Gym, Điện thoại...">
     </div></div>
     <div class="irow"><div class="ig"><div class="il">Số tiền (₫)</div>
-      <input type="text" inputmode="numeric" class="if mi" id="fa_amt" placeholder="0">
+      <input type="text" inputmode="numeric" class="if mi" id="fa_amt" placeholder="0" oninput="formatMoneyInput(this)">
     </div></div>
     <div class="irow"><div class="ig"><div class="il">Từ tháng (MM/YYYY)</div>
       <input type="text" class="if" id="fa_from" placeholder="01/2026" maxlength="7">
@@ -760,6 +760,13 @@ function save() {
 // ── utils ──
 const fmt=n=>new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND',maximumFractionDigits:0}).format(n||0);
 const fmtS=n=>{const a=Math.abs(n);return a>=1e9?(n/1e9).toFixed(1)+' tỷ':a>=1e5?(n/1e6).toFixed(1)+' tr':new Intl.NumberFormat('vi-VN').format(n||0);};
+// Format input tiền tự thêm dấu chấm khi gõ
+function formatMoneyInput(el){
+  const neg=el.value.startsWith('-');
+  const raw=el.value.replace(/[^0-9]/g,'');
+  if(!raw){el.value=neg?'-':'';return;}
+  el.value=(neg?'-':'')+parseInt(raw,10).toLocaleString('vi-VN');
+}
 const fmtD=ds=>{const d=new Date(ds);return `${d.getDate()}/${d.getMonth()+1}/${String(d.getFullYear()).slice(2)}`;};
 const today=()=>new Date().toISOString().split('T')[0];
 const mkKey=(m,y)=>`${String(m+1).padStart(2,'0')}/${y}`;
@@ -933,7 +940,13 @@ function renderMonth(){
 
   // month end
   if(md.closed){
-    document.getElementById('closedMonthInfo').innerHTML=`<div class="card" style="background:var(--green-bg);border-color:rgba(62,207,142,0.2)"><div style="font-size:13px;font-weight:500;color:var(--green);margin-bottom:4px">✅ Đã chốt tháng</div><div style="font-size:12px;color:var(--text2)">Khai báo: ${fmt(md.remain)} · Carry over ${md.remain>=0?'+':''}${fmt(md.remain)} → tháng sau</div></div>`;
+    document.getElementById('closedMonthInfo').innerHTML=`<div class="card" style="background:var(--green-bg);border-color:rgba(62,207,142,0.2);display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:13px;font-weight:500;color:var(--green);margin-bottom:4px">✅ Đã chốt tháng</div>
+        <div style="font-size:12px;color:var(--text2)">Khai báo: ${fmt(md.remain)} · Carry over ${md.remain>=0?'+':''}${fmt(md.remain)} → tháng sau</div>
+      </div>
+      <button onclick="openModal('closeMonth')" style="background:var(--card);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap">✏️ Sửa lại</button>
+    </div>`;
     document.getElementById('monthEndCard').style.display='none';
   } else {
     document.getElementById('closedMonthInfo').innerHTML='';
@@ -974,9 +987,10 @@ function renderSpendSection(key,md,chiEff){
       </div>
     </div>`).join('');
 
+  const spendExpanded=_expandState[key+'_spend']===true;
   document.getElementById('spendSection').innerHTML=`
     <div class="card ${cls}">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${spends.length?'10px':'0'}">
+      <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleSpendSection('${key}')">
         <div>
           <div style="font-size:12px;color:var(--text2)">Chi tiêu lớn ghi lại</div>
           <div style="display:flex;align-items:baseline;gap:8px;margin-top:2px">
@@ -984,13 +998,18 @@ function renderSpendSection(key,md,chiEff){
             ${chiEff>0?`<span style="font-size:11px;color:var(--text3)">/ ${fmt(chiEff)} khoản chi</span>`:''}
           </div>
         </div>
-        <div style="display:flex;gap:6px;align-items:center">
+        <div style="display:flex;gap:6px;align-items:center" onclick="event.stopPropagation()">
           <button class="bs" onclick="openModal('addSpend')" style="font-size:12px;padding:6px 12px">+ Ghi</button>
           <button class="pencil-btn ${spendEditMode?'active':''}" onclick="toggleSpendEdit()" title="Sửa/Xóa">✏️</button>
+          <span style="color:var(--text3);font-size:12px">${spendExpanded?'▲':'▼'}</span>
         </div>
       </div>
-      ${spendRows}
+      ${spendExpanded?spendRows:''}
     </div>`;
+}
+function toggleSpendSection(key){
+  _expandState[key+'_spend']=!_expandState[key+'_spend'];
+  renderMonth();
 }
 
 // ── DISTRIBUTE REMAIN ──
@@ -1158,9 +1177,16 @@ function openCloseMonthModal(){
   const chiEff=(md.alloc.chi||0)+(md.carryOver||0);
   document.getElementById('closeMonthTitle').textContent=MONTHS[S.curMonth]+' '+S.curYear;
   document.getElementById('closeMonthSummary').innerHTML=`Thu nhập: <strong class="g">${fmt(inc)}</strong><br>Khoản chi được chia: <strong class="a">${fmt(chiEff)}</strong><br>Đã chi: <strong class="r">${fmt(spent)}</strong><br>Dự kiến còn lại: <strong>${fmt(chiEff-spent)}</strong>`;
-  // Reset 4 ô nguồn
-  ['cr_cash','cr_vcb','cr_momo','cr_credit'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  const td=document.getElementById('closeTotalDisplay');if(td){td.textContent='0 ₫';td.style.color='';}
+  // Load số cũ nếu đã chốt, không reset
+  const sources=['cr_cash','cr_vcb','cr_momo','cr_credit'];
+  const saved=md.remainSources||{};
+  sources.forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    const val=saved[id]||0;
+    el.value=val?val.toLocaleString('vi-VN'):'';
+  });
+  updateCloseTotal();
 }
 function getCloseRawNum(id){
   const el=document.getElementById(id);
@@ -1176,6 +1202,7 @@ function doCloseMonth(){
   const key=curKey();const md=getMonthData(key);
   const remain=getCloseRawNum('cr_cash')+getCloseRawNum('cr_vcb')+getCloseRawNum('cr_momo')+getCloseRawNum('cr_credit');
   md.remain=remain;md.closed=true;
+  md.remainSources={cr_cash:getCloseRawNum('cr_cash'),cr_vcb:getCloseRawNum('cr_vcb'),cr_momo:getCloseRawNum('cr_momo'),cr_credit:getCloseRawNum('cr_credit')};
   const nm=S.curMonth===11?0:S.curMonth+1;const ny=S.curMonth===11?S.curYear+1:S.curYear;
   const nk=mkKey(nm,ny);const nmd=getMonthData(nk);
   nmd.carryOver=(nmd.carryOver||0)+remain;
