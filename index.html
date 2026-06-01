@@ -1158,7 +1158,9 @@ function openCloseMonthModal(){
   const chiEff=(md.alloc.chi||0)+(md.carryOver||0);
   document.getElementById('closeMonthTitle').textContent=MONTHS[S.curMonth]+' '+S.curYear;
   document.getElementById('closeMonthSummary').innerHTML=`Thu nhập: <strong class="g">${fmt(inc)}</strong><br>Khoản chi được chia: <strong class="a">${fmt(chiEff)}</strong><br>Đã chi: <strong class="r">${fmt(spent)}</strong><br>Dự kiến còn lại: <strong>${fmt(chiEff-spent)}</strong>`;
-  document.getElementById('closeRemain').value='';
+  // Reset 4 ô nguồn
+  ['cr_cash','cr_vcb','cr_momo','cr_credit'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const td=document.getElementById('closeTotalDisplay');if(td){td.textContent='0 ₫';td.style.color='';}
 }
 function getCloseRawNum(id){
   const el=document.getElementById(id);
