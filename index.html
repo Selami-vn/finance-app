@@ -142,10 +142,16 @@ select.if option{background:#1e1e28;}
 
 /* PASSWORD SCREEN */
 #pwScreen{position:fixed;inset:0;background:#0f0f13;z-index:9999;display:flex;align-items:center;justify-content:center;overflow:hidden;}
-#pwBg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
-#pwBg img{width:70vmin;height:70vmin;object-fit:contain;opacity:0.06;animation:pwSpin 20s linear infinite;}
-@keyframes pwSpin{from{transform:rotate(0deg) scale(1);}50%{transform:rotate(180deg) scale(1.08);}to{transform:rotate(360deg) scale(1);}}
-#pwBox{background:#1a1a24;border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:36px 28px;width:min(340px,90vw);text-align:center;}
+#pwBg{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+.pw-petal{position:absolute;object-fit:contain;opacity:0.07;animation:pwFloat linear infinite;}
+@keyframes pwFloat{
+  0%  {transform:translate(0,0) rotate(0deg) scale(1);}
+  25% {transform:translate(var(--tx1),var(--ty1)) rotate(90deg) scale(var(--s1));}
+  50% {transform:translate(var(--tx2),var(--ty2)) rotate(200deg) scale(var(--s2));}
+  75% {transform:translate(var(--tx3),var(--ty3)) rotate(300deg) scale(var(--s3));}
+  100%{transform:translate(0,0) rotate(360deg) scale(1);}
+}
+#pwBox{background:rgba(18,18,28,0.95);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:36px 28px;width:min(340px,90vw);text-align:center;position:relative;z-index:1;}
 #pwLogo{margin-bottom:12px;}
 #pwTitle{font-size:20px;font-weight:700;color:#f0eff5;margin-bottom:6px;}
 #pwSub{font-size:13px;color:#5f5d72;margin-bottom:24px;}
@@ -158,7 +164,33 @@ select.if option{background:#1e1e28;}
 <body>
 
 <div id="pwScreen">
-  <div id="pwBg"><img src="https://raw.githubusercontent.com/Selami-vn/finance-app/main/logo.png"></div>
+  <div id="pwBg"></div>
+<script>
+(function(){
+  const bg=document.getElementById('pwBg');
+  if(!bg)return;
+  const src='https://raw.githubusercontent.com/Selami-vn/finance-app/main/logo.png';
+  const count=5;
+  for(let i=0;i<count;i++){
+    const img=document.createElement('img');
+    img.src=src;
+    img.className='pw-petal';
+    const sz=(80+Math.random()*120);
+    img.style.cssText=[
+      `width:${sz}px`,`height:${sz}px`,
+      `left:${Math.random()*90}%`,`top:${Math.random()*90}%`,
+      `--tx1:${-50+Math.random()*200}px`,`--ty1:${-50+Math.random()*200}px`,
+      `--tx2:${-100+Math.random()*300}px`,`--ty2:${-100+Math.random()*200}px`,
+      `--tx3:${-50+Math.random()*150}px`,`--ty3:${50+Math.random()*200}px`,
+      `--s1:${0.7+Math.random()*0.8}`,`--s2:${0.5+Math.random()*1.2}`,`--s3:${0.8+Math.random()*0.6}`,
+      `animation-duration:${12+Math.random()*18}s`,
+      `animation-delay:${-Math.random()*15}s`,
+      `opacity:${0.04+Math.random()*0.07}`
+    ].join(';');
+    bg.appendChild(img);
+  }
+})();
+</script>
   <div id="pwBox">
     <div id="pwLogo"><img src="https://raw.githubusercontent.com/Selami-vn/finance-app/main/logo.png" style="width:160px;height:160px;object-fit:contain"></div>
     <div id="pwTitle">Selami</div>
