@@ -143,8 +143,8 @@ select.if option{background:#1e1e28;}
 /* PASSWORD SCREEN */
 #pwScreen{position:fixed;inset:0;background:#0f0f13;z-index:9999;display:flex;align-items:center;justify-content:center;overflow:hidden;}
 #pwBg{position:absolute;inset:0;pointer-events:none;display:block;}
-#pwBox{background:rgba(18,18,28,0.95);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:32px 24px;width:min(320px,80vw);text-align:center;position:relative;z-index:1;}
-#pwLogo{margin-bottom:12px;}
+#pwBox{background:rgba(18,18,28,0.95);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:32px 24px 16px;width:min(320px,80vw);text-align:center;position:relative;z-index:1;}
+#pwLogo{margin-bottom:12px;}@media(max-width:480px){#pwBox{padding:0;background:transparent;border:none;backdrop-filter:none;width:88vw;}#pwScreen .pw-inner{background:rgba(18,18,28,0.95);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:28px 20px 16px;width:100%;}}
 #pwTitle{font-size:20px;font-weight:700;color:#f0eff5;margin-bottom:6px;}
 #pwSub{font-size:13px;color:#5f5d72;margin-bottom:24px;}
 #pwInput{width:100%;background:#0f0f13;border:1px solid rgba(255,255,255,0.13);border-radius:10px;padding:13px 16px;color:#f0eff5;font-size:16px;font-family:'Be Vietnam Pro',sans-serif;outline:none;text-align:center;letter-spacing:3px;margin-bottom:12px;}
@@ -238,14 +238,14 @@ select.if option{background:#1e1e28;}
   }
 })();
 </script>
-  <div id="pwBox">
+  <div id="pwBox"><div class="pw-inner">
     <div id="pwLogo"><img src="https://raw.githubusercontent.com/Selami-vn/finance-app/main/logo.png" style="width:160px;height:160px;object-fit:contain"></div>
     <div id="pwTitle">Selami</div>
     <div id="pwSub">Nhập mật khẩu để tiếp tục</div>
     <input type="password" id="pwInput" placeholder="••••••" onkeydown="if(event.key==='Enter')checkPw()">
     <button id="pwBtn" onclick="checkPw()">Vào app</button>
     <div id="pwErr"></div>
-  </div>
+  </div></div>
 </div>
 
 <div class="header">
