@@ -904,7 +904,7 @@ let spendEditMode=false;
 function toggleSpendEdit(){
   spendEditMode=!spendEditMode;
   const key=curKey();const md=getMonthData(key);
-  const chiEff=md.alloc.chi||0;
+  const chiEff=(md.alloc.chi||0)+(md.carryOver||0);
   renderSpendSection(key,md,chiEff);
 }
 
@@ -914,10 +914,7 @@ function renderMonth(){
 
   // carry over
   const cob=document.getElementById('carryBanner');
-  if(md.carryOver&&md.carryOver!==0){
-    const pos=md.carryOver>0;
-    cob.innerHTML=`<div class="cobanner ${pos?'pos':'neg'}"><div style="font-size:18px">${pos?'🎉':'⚠️'}</div><div><div style="font-size:12px;font-weight:600;color:${pos?'var(--green)':'var(--red)'}">${pos?'Carry over từ tháng trước':'Bội chi tháng trước'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${pos?'+':''}${fmt(md.carryOver)} đã ${pos?'cộng vào':'trừ khỏi'} khoản chi</div></div></div>`;
-  } else cob.innerHTML='';
+  cob.innerHTML='';
 
   // income
   const inc=incomeForKey(key);
@@ -927,7 +924,7 @@ function renderMonth(){
 
   // alloc bar
   const al=md.alloc;
-  const chiEff=al.chi||0;
+  const chiEff=(al.chi||0)+(md.carryOver||0);
   const allocTot=chiEff+(al.saving||0)+(al.hui||0)+(al.extra||[]).reduce((s,e)=>s+e.amt,0);
   const remain=inc-allocTot;
   const balanced=inc>0&&Math.abs(remain)<=1; // ±1đ để tránh lỗi làm tròn
@@ -959,8 +956,35 @@ function renderMonth(){
   const fixedTotal=extraFixed.reduce((s,e)=>s+e.amt,0);
   const debtExpanded=_expandState[key+'_debt']===true;
   const fixedExpanded=_expandState[key+'_fixed']===true;
+  const chiExpanded=_expandState[key+'_chi']===true;
+  const chiBaseAmt=al.chi||0;
+  const chiRow=md.carryOver?`
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:11px 14px;margin-bottom:7px;border-left:3px solid var(--amber)">
+      <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="_expandState['${key}_chi']=!_expandState['${key}_chi'];renderMonth()">
+        <div>
+          <div style="font-size:13px;font-weight:500">💸 Khoản chi tháng</div>
+          ${inc>0?`<div style="font-size:10px;color:var(--text3)">${Math.round(chiEff/inc*100)}% lương</div>`:''}
+        </div>
+        <div style="font-size:16px;font-weight:700;color:var(--amber)">${fmt(chiEff)}</div>
+      </div>
+      ${chiExpanded?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px">
+          <span style="color:var(--text2)">Phân bổ ban đầu</span>
+          <span style="color:var(--amber);font-weight:600">${fmt(chiBaseAmt)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px">
+          <span style="color:var(--text2)">${md.carryOver>0?'🎉 Dư tháng trước':'⚠️ Bội chi tháng trước'}</span>
+          <span style="color:${md.carryOver>0?'var(--green)':'var(--red)'};font-weight:600">${md.carryOver>0?'+':''}${fmt(md.carryOver)}</span>
+        </div>
+      </div>`:''}
+    </div>`:`
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:11px 14px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;border-left:3px solid var(--amber)">
+      <div><div style="font-size:13px;font-weight:500">💸 Khoản chi tháng</div>
+        ${inc>0?`<div style="font-size:10px;color:var(--text3)">${Math.round(chiEff/inc*100)}% lương</div>`:''}
+      </div>
+      <div style="font-size:16px;font-weight:700;color:var(--amber)">${fmt(chiEff)}</div>
+    </div>`;
   const allocItems=[
-    {name:'💸 Khoản chi tháng',amt:chiEff,color:'var(--amber)',note:''},
     {name:'🐷 Hụi mẹ',amt:al.hui||0,color:'var(--purple)'},
     {name:'💰 Tiết kiệm',amt:al.saving||0,color:'var(--blue)'},
     ...extraNormal.map(e=>({name:'📦 '+e.name,amt:e.amt,color:'var(--green)'})),
@@ -1003,9 +1027,9 @@ function renderMonth(){
         </div>`).join('')}
       </div>`:''}
     </div>`:'';
-  document.getElementById('allocList').innerHTML=allocItems.filter(x=>x.amt>0).map(item=>`
+  document.getElementById('allocList').innerHTML=chiRow+allocItems.filter(x=>x.amt>0).map(item=>`
     <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:11px 14px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;border-left:3px solid ${item.color}">
-      <div><div style="font-size:13px;font-weight:500">${item.name}${item.note||''}</div>
+      <div><div style="font-size:13px;font-weight:500">${item.name}</div>
         ${inc>0&&item.amt>0?`<div style="font-size:10px;color:var(--text3)">${Math.round(item.amt/inc*100)}% lương</div>`:''}
       </div>
       <div style="font-size:16px;font-weight:700;color:${item.color}">${fmt(item.amt)}</div>
