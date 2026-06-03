@@ -1163,11 +1163,11 @@ function openAllocModal(){
   if(coEl) coEl.innerHTML=md.carryOver?`<div style="font-size:11px;color:${md.carryOver>0?'var(--green)':'var(--red)'};margin-top:4px">${md.carryOver>0?'🎉 Dư':'⚠️ Bội chi'} tháng trước: ${md.carryOver>0?'+':''}${fmt(md.carryOver)} → ${md.carryOver>0?'cộng vào':'trừ khỏi'} khoản chi sau khi lưu</div>`:'';
   document.getElementById('allocFields').innerHTML=`
     <div class="irow"><div class="ig"><div class="il">💸 Khoản chi tháng (₫)</div>
-      <input type="text" inputmode="numeric" class="if mi" id="af_chi" value="${al.chi?(al.chi).toLocaleString('vi-VN'):''}"></div></div>
+      <input type="text" inputmode="numeric" class="if mi" id="af_chi" oninput="formatMoneyInput(this);recalcAllocTip()" value="${al.chi?(al.chi).toLocaleString('vi-VN'):''}"></div></div>
     <div class="irow"><div class="ig"><div class="il">🐷 Hụi mẹ (₫) — tài sản hụi +${fmtS(HUI_MONTHLY_IN)}</div>
-      <input type="text" inputmode="numeric" class="if mi" id="af_hui" value="${al.hui!==undefined&&al.hui!==null?al.hui.toLocaleString('vi-VN'):HUI_MONTHLY_OUT.toLocaleString('vi-VN')}"></div></div>
+      <input type="text" inputmode="numeric" class="if mi" id="af_hui" oninput="formatMoneyInput(this);recalcAllocTip()" value="${al.hui!==undefined&&al.hui!==null?al.hui.toLocaleString('vi-VN'):HUI_MONTHLY_OUT.toLocaleString('vi-VN')}"></div></div>
     <div class="irow"><div class="ig"><div class="il">💰 Tiết kiệm (₫) — tự vào tài sản</div>
-      <input type="text" inputmode="numeric" class="if mi" id="af_saving" value="${al.saving?(al.saving).toLocaleString('vi-VN'):''}"></div></div>
+      <input type="text" inputmode="numeric" class="if mi" id="af_saving" oninput="formatMoneyInput(this);recalcAllocTip()" value="${al.saving?(al.saving).toLocaleString('vi-VN'):''}"></div></div>
     ${(al.extra||[]).map((e,i)=>`<div class="irow"><div class="ig"><div class="il">📦 ${e.name} (₫)</div>
       <input type="text" inputmode="numeric" class="if mi" id="af_extra_${i}" value="${(e.amt||0).toLocaleString('vi-VN')}">
       <button class="bd bs" onclick="removeExtraFund(${i})" style="margin-top:6px;font-size:11px;padding:4px 10px">Xóa</button>
@@ -1190,6 +1190,19 @@ function removeExtraFund(i){
   md.alloc.extra.splice(i,1);save();openAllocModal();
 }
 
+function recalcAllocTip(){
+  const key=curKey();const md=getMonthData(key);const inc=incomeForKey(key);
+  const chi=getMV('af_chi');
+  const hui=getMV('af_hui');
+  const saving=getMV('af_saving');
+  const extras=Array.from(document.querySelectorAll('[id^="af_extra_"]')).reduce((s,el)=>s+(parseInt(el.value.replace(/[^0-9]/g,''))||0),0);
+  const tot=chi+hui+saving+extras;
+  const rem=inc-tot;
+  const el=document.getElementById('allocLeftTip');
+  if(!el)return;
+  el.textContent=rem>0?`Chưa phân: ${fmt(rem)}`:(rem<0?`⚠️ Vượt lương: ${fmt(-rem)}`:'Đã phân đủ ✓');
+  el.style.color=rem<0?'var(--red)':rem===0?'var(--green)':'var(--text3)';
+}
 function saveAlloc(){
   const key=curKey();const md=getMonthData(key);
   const oldSaving=md.alloc.saving||0;
