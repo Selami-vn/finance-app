@@ -925,8 +925,8 @@ function renderMonth(){
 
   // alloc bar
   const al=md.alloc;
-  const chiEff=(al.chi||0)+(md.carryOver||0);
-  const allocTot=chiEff+(al.saving||0)+(al.hui||0)+(al.extra||[]).reduce((s,e)=>s+e.amt,0);
+  const chiEff=(al.chi||0)+(md.carryOver||0); // chiEff = số thực em có để tiêu
+  const allocTot=allocTotal(al); // tổng phân bổ = chi thuần + các khoản (không cộng carryOver)
   const remain=inc-allocTot;
   const balanced=inc>0&&Math.abs(remain)<=1; // ±1đ để tránh lỗi làm tròn
   const pct=inc>0?Math.min(100,Math.round(allocTot/inc*100)):0;
@@ -1169,7 +1169,7 @@ function openAllocModal(){
     <div class="irow"><div class="ig"><div class="il">💰 Tiết kiệm (₫) — tự vào tài sản</div>
       <input type="text" inputmode="numeric" class="if mi" id="af_saving" oninput="formatMoneyInput(this);recalcAllocTip()" value="${al.saving?(al.saving).toLocaleString('vi-VN'):''}"></div></div>
     ${(al.extra||[]).map((e,i)=>`<div class="irow"><div class="ig"><div class="il">📦 ${e.name} (₫)</div>
-      <input type="text" inputmode="numeric" class="if mi" id="af_extra_${i}" value="${(e.amt||0).toLocaleString('vi-VN')}">
+      <input type="text" inputmode="numeric" class="if mi" id="af_extra_${i}" oninput="formatMoneyInput(this);recalcAllocTip()" value="${(e.amt||0).toLocaleString('vi-VN')}">
       <button class="bd bs" onclick="removeExtraFund(${i})" style="margin-top:6px;font-size:11px;padding:4px 10px">Xóa</button>
     </div></div>`).join('')}`;
   setTimeout(initMI,50);
@@ -1205,6 +1205,12 @@ function recalcAllocTip(){
 }
 function saveAlloc(){
   const key=curKey();const md=getMonthData(key);
+  // Kiểm tra không vượt lương
+  const inc=incomeForKey(key);
+  const chi=getMV('af_chi'),hui=getMV('af_hui'),saving=getMV('af_saving');
+  const extras=(md.alloc.extra||[]).reduce((s,e,i)=>{const v=getMV('af_extra_'+i);return s+(v>=0?v:e.amt);},0);
+  const tot=chi+hui+saving+extras;
+
   const oldSaving=md.alloc.saving||0;
   const oldHui=md.alloc.hui||0;
   // Reset chốt tháng nếu đã chốt
