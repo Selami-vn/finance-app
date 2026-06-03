@@ -1273,12 +1273,14 @@ function updateCloseTotal(){
 }
 function doCloseMonth(){
   const key=curKey();const md=getMonthData(key);
+  const oldRemain=md.remain||0; // remain cũ đã ghi vào tháng sau trước đó
   const remain=getCloseRawNum('cr_cash')+getCloseRawNum('cr_vcb')+getCloseRawNum('cr_momo')+getCloseRawNum('cr_credit');
   md.remain=remain;md.closed=true;
   md.remainSources={cr_cash:getCloseRawNum('cr_cash'),cr_vcb:getCloseRawNum('cr_vcb'),cr_momo:getCloseRawNum('cr_momo'),cr_credit:getCloseRawNum('cr_credit')};
   const nm=S.curMonth===11?0:S.curMonth+1;const ny=S.curMonth===11?S.curYear+1:S.curYear;
   const nk=mkKey(nm,ny);const nmd=getMonthData(nk);
-  nmd.carryOver=(nmd.carryOver||0)+remain;
+  // Xóa carryOver cũ rồi set lại — không cộng dồn
+  nmd.carryOver=(nmd.carryOver||0)-oldRemain+remain;
   save();closeModal('closeMonth');renderMonth();
   toast(`Đã chốt! ${remain>=0?'Dư '+fmt(remain)+' → tháng sau':'Bội chi '+fmt(-remain)+' → trừ tháng sau'}`,'info');
 }
