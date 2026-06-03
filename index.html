@@ -416,7 +416,8 @@ select.if option{background:#1e1e28;}
     <div class="mh"></div>
     <div class="mt">✏️ Phân bổ <span id="allocMonthTitle"></span></div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Lương tháng: <strong class="g" id="allocIncomeTip">0 ₫</strong></div>
-    <div style="font-size:11px;color:var(--text3);margin-bottom:14px" id="allocLeftTip"></div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:4px" id="allocLeftTip"></div>
+    <div id="allocCarryOver" style="margin-bottom:10px"></div>
     <div id="allocFields"></div>
     <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
       <div style="font-size:12px;color:var(--text3);margin-bottom:8px">+ Thêm quỹ khác</div>
@@ -1152,9 +1153,14 @@ function openAllocModal(){
   });
   document.getElementById('allocMonthTitle').textContent=MONTHS[S.curMonth]+' '+S.curYear;
   document.getElementById('allocIncomeTip').textContent=fmt(inc);
-  const tot=allocTotal(al);
+  const tot=allocTotal(al); // carryOver không tính vào phân bổ, hiện riêng
   const rem=inc-tot;
-  document.getElementById('allocLeftTip').textContent=rem>0?`Chưa phân: ${fmt(rem)}`:(rem<0?`Vượt quá: ${fmt(-rem)}`:'Đã phân đủ ✓');
+  const coText=md.carryOver?` (bội chi ${fmt(-md.carryOver)} tháng trước)`:'';
+  document.getElementById('allocLeftTip').textContent=rem>0?`Chưa phân: ${fmt(rem)}`:(rem<0?`⚠️ Vượt quá: ${fmt(-rem)}`:'Đã phân đủ ✓');
+  document.getElementById('allocLeftTip').style.color=rem<0?'var(--red)':rem===0?'var(--green)':'var(--text3)';
+  // Hiện carryOver như ghi chú riêng
+  const coEl=document.getElementById('allocCarryOver');
+  if(coEl) coEl.innerHTML=md.carryOver?`<div style="font-size:11px;color:${md.carryOver>0?'var(--green)':'var(--red)'};margin-top:4px">${md.carryOver>0?'🎉 Dư':'⚠️ Bội chi'} tháng trước: ${md.carryOver>0?'+':''}${fmt(md.carryOver)} → ${md.carryOver>0?'cộng vào':'trừ khỏi'} khoản chi sau khi lưu</div>`:'';
   document.getElementById('allocFields').innerHTML=`
     <div class="irow"><div class="ig"><div class="il">💸 Khoản chi tháng (₫)</div>
       <input type="text" inputmode="numeric" class="if mi" id="af_chi" value="${al.chi?(al.chi).toLocaleString('vi-VN'):''}"></div></div>
