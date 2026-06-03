@@ -904,7 +904,7 @@ let spendEditMode=false;
 function toggleSpendEdit(){
   spendEditMode=!spendEditMode;
   const key=curKey();const md=getMonthData(key);
-  const chiEff=(md.alloc.chi||0)+(md.carryOver||0);
+  const chiEff=md.alloc.chi||0;
   renderSpendSection(key,md,chiEff);
 }
 
@@ -927,7 +927,7 @@ function renderMonth(){
 
   // alloc bar
   const al=md.alloc;
-  const chiEff=(al.chi||0)+(md.carryOver||0);
+  const chiEff=al.chi||0;
   const allocTot=chiEff+(al.saving||0)+(al.hui||0)+(al.extra||[]).reduce((s,e)=>s+e.amt,0);
   const remain=inc-allocTot;
   const balanced=inc>0&&Math.abs(remain)<=1; // ±1đ để tránh lỗi làm tròn
@@ -960,7 +960,7 @@ function renderMonth(){
   const debtExpanded=_expandState[key+'_debt']===true;
   const fixedExpanded=_expandState[key+'_fixed']===true;
   const allocItems=[
-    {name:'💸 Khoản chi tháng',amt:chiEff,color:'var(--amber)',note:md.carryOver?(md.carryOver>0?` (+${fmtS(md.carryOver)} CO)`:(` (${fmtS(md.carryOver)} âm)`)): ''},
+    {name:'💸 Khoản chi tháng',amt:chiEff,color:'var(--amber)',note:''},
     {name:'🐷 Hụi mẹ',amt:al.hui||0,color:'var(--purple)'},
     {name:'💰 Tiết kiệm',amt:al.saving||0,color:'var(--blue)'},
     ...extraNormal.map(e=>({name:'📦 '+e.name,amt:e.amt,color:'var(--green)'})),
@@ -1128,7 +1128,7 @@ function openAllocModal(){
   });
   document.getElementById('allocMonthTitle').textContent=MONTHS[S.curMonth]+' '+S.curYear;
   document.getElementById('allocIncomeTip').textContent=fmt(inc);
-  const tot=allocTotal(al)+(md.carryOver||0);
+  const tot=allocTotal(al);
   const rem=inc-tot;
   document.getElementById('allocLeftTip').textContent=rem>0?`Chưa phân: ${fmt(rem)}`:(rem<0?`Vượt quá: ${fmt(-rem)}`:'Đã phân đủ ✓');
   document.getElementById('allocFields').innerHTML=`
