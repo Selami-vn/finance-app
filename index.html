@@ -925,7 +925,16 @@ function renderMonth(){
 
   // alloc bar
   const al=md.alloc;
-  const chiEff=(al.chi||0)+(md.carryOver||0); // chiEff = số thực em có để tiêu
+  // chiEff = chi thuần + carryOver + thu nợ tháng này
+  const debtPayThisMonth=S.debts.reduce((s,d)=>{
+    if(!d.payments)return s;
+    return s+d.payments.filter(p=>{
+      const pd=new Date(p.date);
+      return pd.getMonth()===S.curMonth&&pd.getFullYear()===S.curYear;
+    }).reduce((ss,p)=>ss+p.amount,0);
+  },0);
+  console.log('renderMonth al.chi=',al.chi,'carryOver=',md.carryOver);
+  const chiEff=(al.chi||0)+(md.carryOver||0); // chiEff = số thực em có để tiêu (al.chi đã bao gồm thu nợ)
   const allocTot=allocTotal(al); // tổng phân bổ = chi thuần + các khoản (không cộng carryOver)
   const remain=inc-allocTot;
   const balanced=inc>0&&Math.abs(remain)<=1; // ±1đ để tránh lỗi làm tròn
