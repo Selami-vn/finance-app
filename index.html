@@ -1618,6 +1618,7 @@ function doPayDebt(){
   if(d.paid>=d.amount)d.closed=true;
   const key=curKey();const md=getMonthData(key);
   md.alloc.chi=(md.alloc.chi||0)+payAmt;
+  console.log('doPayDebt: payAmt=',payAmt,' al.chi after=',md.alloc.chi);
   save();closeModal('payDebt');renderDebt();renderMonth();
   toast(`Thu ${fmt(payAmt)} → khoản chi tháng này ✓`,'info');
 }
