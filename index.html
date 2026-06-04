@@ -933,13 +933,6 @@ function renderMonth(){
       return pd.getMonth()===S.curMonth&&pd.getFullYear()===S.curYear;
     }).reduce((ss,p)=>ss+p.amount,0);
   },0);
-  const debtPayThisMonth=S.debts.reduce((s,d)=>{
-    if(!d.payments)return s;
-    return s+d.payments.filter(p=>{
-      const pd=new Date(p.date);
-      return pd.getMonth()===S.curMonth&&pd.getFullYear()===S.curYear;
-    }).reduce((ss,p)=>ss+p.amount,0);
-  },0);
   const chiEff=(al.chi||0)+(md.carryOver||0)+debtPayThisMonth;
   const allocTot=allocTotal(al); // tổng phân bổ = chi thuần + các khoản (không cộng carryOver)
   const remain=inc-allocTot;
