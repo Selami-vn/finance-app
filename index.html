@@ -973,10 +973,21 @@ function renderMonth(){
           <span style="color:var(--text2)">Phân bổ ban đầu</span>
           <span style="color:var(--amber);font-weight:600">${fmt(chiBaseAmt)}</span>
         </div>
-        <div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px">
+        ${md.carryOver?`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px">
           <span style="color:var(--text2)">${md.carryOver>0?'🎉 Dư tháng trước':'⚠️ Bội chi tháng trước'}</span>
           <span style="color:${md.carryOver>0?'var(--green)':'var(--red)'};font-weight:600">${md.carryOver>0?'+':''}${fmt(md.carryOver)}</span>
-        </div>
+        </div>`:''}
+        ${(()=>{
+          const key=mkKey(S.curMonth,S.curYear);
+          const debtPayments=S.debts.filter(d=>d.payments&&d.payments.length>0).flatMap(d=>d.payments.filter(p=>{
+            const pm=new Date(p.date).getMonth();const py=new Date(p.date).getFullYear();
+            return pm===S.curMonth&&py===S.curYear;
+          }).map(p=>({name:d.name,amount:p.amount})));
+          return debtPayments.map(p=>`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px">
+            <span style="color:var(--text2)">💰 Thu nợ ${p.name}</span>
+            <span style="color:var(--green);font-weight:600">+${fmt(p.amount)}</span>
+          </div>`).join('');
+        })()}
       </div>`:''}
     </div>`:`
     <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:11px 14px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;border-left:3px solid var(--amber)">
