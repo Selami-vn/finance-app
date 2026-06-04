@@ -1602,6 +1602,7 @@ function doPayDebt(){
   const remaining=d.amount-d.paid;let payAmt=getMV('payDebtAmt');
   if(payAmt<=0)payAmt=remaining;payAmt=Math.min(payAmt,remaining);
   const note=document.getElementById('payDebtNote').value.trim()||'Thu nợ';
+  if(!d.payments)d.payments=[];
   d.paid+=payAmt;d.payments.push({date:today(),amount:payAmt,note});
   if(d.paid>=d.amount)d.closed=true;
   const key=curKey();const md=getMonthData(key);
