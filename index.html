@@ -1702,7 +1702,11 @@ function openAddDebtForPerson(name){
 function openModal(id){
   if(id==='allocate')openAllocModal();
   if(id==='closeMonth')openCloseMonthModal();
-  if(id==='addSpend')document.getElementById('spendDate').value=today();
+  if(id==='addSpend'){
+    document.getElementById('spendAmt').value='';
+    document.getElementById('spendDesc').value='';
+    document.getElementById('spendDate').value=today();
+  }
   if(id==='addDebt'){populateDebtFunds();document.getElementById('debtDate').value=today();}
   if(id==='addIncome'){
     const _d=new Date();
