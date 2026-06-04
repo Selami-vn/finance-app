@@ -933,8 +933,14 @@ function renderMonth(){
       return pd.getMonth()===S.curMonth&&pd.getFullYear()===S.curYear;
     }).reduce((ss,p)=>ss+p.amount,0);
   },0);
-  console.log('renderMonth al.chi=',al.chi,'carryOver=',md.carryOver);
-  const chiEff=(al.chi||0)+(md.carryOver||0); // chiEff = số thực em có để tiêu (al.chi đã bao gồm thu nợ)
+  const debtPayThisMonth=S.debts.reduce((s,d)=>{
+    if(!d.payments)return s;
+    return s+d.payments.filter(p=>{
+      const pd=new Date(p.date);
+      return pd.getMonth()===S.curMonth&&pd.getFullYear()===S.curYear;
+    }).reduce((ss,p)=>ss+p.amount,0);
+  },0);
+  const chiEff=(al.chi||0)+(md.carryOver||0)+debtPayThisMonth;
   const allocTot=allocTotal(al); // tổng phân bổ = chi thuần + các khoản (không cộng carryOver)
   const remain=inc-allocTot;
   const balanced=inc>0&&Math.abs(remain)<=1; // ±1đ để tránh lỗi làm tròn
@@ -980,7 +986,7 @@ function renderMonth(){
       ${chiExpanded?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
         <div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px">
           <span style="color:var(--text2)">Phân bổ ban đầu</span>
-          <span style="color:var(--amber);font-weight:600">${fmt(chiBaseAmt)}</span>
+          <span style="color:var(--amber);font-weight:600">${fmt(al.chi||0)}</span>
         </div>
         ${md.carryOver?`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px">
           <span style="color:var(--text2)">${md.carryOver>0?'🎉 Dư tháng trước':'⚠️ Bội chi tháng trước'}</span>
@@ -1626,8 +1632,6 @@ function doPayDebt(){
   d.paid+=payAmt;d.payments.push({date:today(),amount:payAmt,note});
   if(d.paid>=d.amount)d.closed=true;
   const key=curKey();const md=getMonthData(key);
-  md.alloc.chi=(md.alloc.chi||0)+payAmt;
-  console.log('doPayDebt: payAmt=',payAmt,' al.chi after=',md.alloc.chi);
   save();closeModal('payDebt');renderDebt();renderMonth();
   toast(`Thu ${fmt(payAmt)} → khoản chi tháng này ✓`,'info');
 }
