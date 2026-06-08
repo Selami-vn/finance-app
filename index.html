@@ -937,17 +937,23 @@ function renderMonth(){
   // chiEff = chi thuần + carryOver + thu nợ tháng này
 
   // Tính thu nợ tháng này theo từng khoản phân về
+  function parsePayDate(ds){
+    if(!ds)return new Date(0);
+    // Hỗ trợ cả "dd/mm/yyyy" và "yyyy-mm-dd"
+    if(ds.includes('/')){const[d,m,y]=ds.split('/');return new Date(y,m-1,d);}
+    return new Date(ds);
+  }
   const _debtChi=S.debts.reduce((s,d)=>{
     if(!d.payments)return s;
     return s+d.payments.filter(p=>{
-      const pd=new Date(p.date);
+      const pd=parsePayDate(p.date);
       return pd.getMonth()===S.curMonth&&pd.getFullYear()===S.curYear&&(p.allocTo||'chi')==='chi';
     }).reduce((ss,p)=>ss+p.amount,0);
   },0);
   const _debtSaving=S.debts.reduce((s,d)=>{
     if(!d.payments)return s;
     return s+d.payments.filter(p=>{
-      const pd=new Date(p.date);
+      const pd=parsePayDate(p.date);
       return pd.getMonth()===S.curMonth&&pd.getFullYear()===S.curYear&&p.allocTo==='saving';
     }).reduce((ss,p)=>ss+p.amount,0);
   },0);
@@ -1005,7 +1011,7 @@ function renderMonth(){
         </div>`:''}
         ${(()=>{
           const pays=S.debts.filter(d=>d.payments&&d.payments.length>0).flatMap(d=>d.payments.filter(p=>{
-            const pd=new Date(p.date);
+            const pd=parsePayDate(p.date);
             return pd.getMonth()===S.curMonth&&pd.getFullYear()===S.curYear&&(p.allocTo||'chi')==='chi';
           }).map(p=>({name:d.name,amount:p.amount})));
           return pays.map(p=>`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px">
@@ -1671,27 +1677,30 @@ function togglePayDebtAllocAmt(id){
   if(wrap)wrap.style.display=cb.checked?'block':'none';
 }
 function doPayDebt(){
-  const i=parseInt(document.getElementById('payDebtIdx').value);const d=S.debts[i];
+  const i=parseInt(document.getElementById('payDebtIdx').value);
+  const d=S.debts[i];
   const note=document.getElementById('payDebtNote').value.trim()||'Thu nợ';
-  const personName=d.name;
-  // Lấy tổng còn nợ của người này
-  const personDebts=S.debts.filter(x=>x.name===personName&&!x.closed).sort((a,b)=>new Date(a.date)-new Date(b.date));
-  const totalRemaining=personDebts.reduce((s,x)=>s+x.amount-x.paid,0);
-  let payAmt=getMV('payDebtAmt');
-  if(payAmt<=0||payAmt>totalRemaining)payAmt=totalRemaining;
+  const allocTo=document.getElementById('payDebtAllocTo')?.value||'chi';
+  const rawInput=document.getElementById('payDebtAmt').value.trim();
+  // Tổng nợ còn lại của người này
+  const allDebts=S.debts.filter(x=>x.name===d.name);
+  const totalOwed=allDebts.reduce((s,x)=>s+(x.amount-x.paid),0);
+  // Để trống = thu hết, có số = lấy số đó
+  let payAmt=rawInput===''?totalOwed:parseInt(rawInput.replace(/[^0-9]/g,''))||0;
+  if(payAmt<=0||totalOwed<=0){toast('Không có gì để thu!','info');return;}
+  payAmt=Math.min(payAmt,totalOwed);
   // Trừ từ khoản cũ nhất
-  let debtLeft=payAmt;
-  personDebts.forEach(pd=>{
-    if(debtLeft<=0)return;
-    const canPay=Math.min(debtLeft,pd.amount-pd.paid);
-    if(canPay<=0)return;
+  const sorted=allDebts.filter(x=>x.amount>x.paid).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  let left=payAmt;
+  sorted.forEach(pd=>{
+    if(left<=0)return;
+    const canPay=Math.min(left,pd.amount-pd.paid);
     if(!pd.payments)pd.payments=[];
     pd.paid+=canPay;
-    pd.payments.push({date:today(),amount:canPay,note,allocTo:allocTo});
+    pd.payments.push({date:today(),amount:canPay,note,allocTo});
     if(pd.paid>=pd.amount)pd.closed=true;
-    debtLeft-=canPay;
+    left-=canPay;
   });
-  const allocTo=document.getElementById('payDebtAllocTo')?.value||'chi';
   save();closeModal('payDebt');renderDebt();renderMonth();
   toast(`Thu ${fmt(payAmt)} → ${allocTo==='chi'?'khoản chi tháng':'tiết kiệm'} ✓`,'info');
 }
