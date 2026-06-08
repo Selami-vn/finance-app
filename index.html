@@ -1701,7 +1701,15 @@ function doPayDebt(){
     if(pd.paid>=pd.amount)pd.closed=true;
     left-=canPay;
   });
-  save();closeModal('payDebt');renderDebt();renderMonth();
+  // Nếu phân về tiết kiệm → cộng vào tài sản saving
+  if(allocTo==='saving'){
+    let sa=S.assets.find(a=>a.type==='saving');
+    if(!sa){sa={id:'a_saving',name:'Tiết kiệm hàng tháng',type:'saving',balance:0,logs:[]};S.assets.push(sa);}
+    if(!sa.logs)sa.logs=[];
+    sa.balance+=payAmt;
+    sa.logs.push({date:today(),diff:payAmt,note:`← Thu nợ: ${d.name}`,balAfter:sa.balance});
+  }
+  save();closeModal('payDebt');renderDebt();renderMonth();renderAssets();
   toast(`Thu ${fmt(payAmt)} → ${allocTo==='chi'?'khoản chi tháng':'tiết kiệm'} ✓`,'info');
 }
 function delDebt(i){if(confirm('Xóa khoản nợ?')){S.debts.splice(i,1);save();renderDebt();}}
