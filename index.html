@@ -375,11 +375,13 @@ select.if option{background:#1e1e28;}
   </div>
   <div class="row" style="margin-bottom:9px">
     <div class="sec" style="margin:0">Danh sách nợ</div>
-    <button class="bs" onclick="openModal('addDebt')">+ Cho mượn</button>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button id="debtHistoryBtn" onclick="_debtState['__showHistory']=!_debtState['__showHistory'];renderDebt()" style="background:none;border:none;font-size:18px;cursor:pointer;padding:4px;opacity:0.4" title="Xem nợ đã thu">🔍</button>
+      <button class="bs" onclick="openModal('addDebt')">+ Cho mượn</button>
+    </div>
   </div>
   <div id="debtList"></div>
-  <div class="sec">Lịch sử thu nợ</div>
-  <div class="card" id="debtHistory"><div class="empty"><div class="ei">📋</div>Chưa có lịch sử</div></div>
+  <div id="debtHistory"></div>
 </div>
 
 <!-- ══ QUÀTẶNG ══ -->
@@ -690,7 +692,7 @@ select.if option{background:#1e1e28;}
 <div class="mb" id="modal-addDebt">
   <div class="modal">
     <div class="mh"></div>
-    <div class="mt">+ Cho mượn tiền</div>
+    <div class="mt" id="addDebtTitle">+ Cho mượn tiền</div>
     <div class="irow"><div class="ig"><div class="il">Tên người mượn</div>
       <input type="text" class="if" id="debtName" placeholder="Tên...">
     </div></div>
@@ -709,7 +711,7 @@ select.if option{background:#1e1e28;}
     <div class="irow" style="margin-bottom:14px"><div class="ig"><div class="il">Ghi chú</div>
       <input type="text" class="if" id="debtNote" placeholder="Ghi chú...">
     </div></div>
-    <button class="btn bp" onclick="addDebt()">Xác nhận</button>
+    <button class="btn bp" id="addDebtConfirmBtn" onclick="addDebt()">Xác nhận</button>
     <button class="bs" onclick="closeModal('addDebt')" style="width:100%;margin-top:8px;text-align:center">Hủy</button>
   </div>
 </div>
@@ -734,7 +736,7 @@ select.if option{background:#1e1e28;}
         <option value="saving">💰 Tiết kiệm</option>
       </select>
     </div></div>
-    <button class="btn bp" onclick="doPayDebt()">✅ Xác nhận thu</button>
+    <button class="btn bp" id="payDebtConfirmBtn" onclick="doPayDebt()">✅ Xác nhận thu</button>
     <button class="bs" onclick="closeModal('payDebt')" style="width:100%;margin-top:8px;text-align:center">Hủy</button>
   </div>
 </div>
@@ -934,7 +936,22 @@ function renderMonth(){
   const al=md.alloc;
   // chiEff = chi thuần + carryOver + thu nợ tháng này
 
-  const chiEff=(al.chi||0)+(md.carryOver||0);
+  // Tính thu nợ tháng này theo từng khoản phân về
+  const _debtChi=S.debts.reduce((s,d)=>{
+    if(!d.payments)return s;
+    return s+d.payments.filter(p=>{
+      const pd=new Date(p.date);
+      return pd.getMonth()===S.curMonth&&pd.getFullYear()===S.curYear&&(p.allocTo||'chi')==='chi';
+    }).reduce((ss,p)=>ss+p.amount,0);
+  },0);
+  const _debtSaving=S.debts.reduce((s,d)=>{
+    if(!d.payments)return s;
+    return s+d.payments.filter(p=>{
+      const pd=new Date(p.date);
+      return pd.getMonth()===S.curMonth&&pd.getFullYear()===S.curYear&&p.allocTo==='saving';
+    }).reduce((ss,p)=>ss+p.amount,0);
+  },0);
+  const chiEff=(al.chi||0)+(md.carryOver||0)+_debtChi;
   const allocTot=allocTotal(al); // tổng phân bổ = chi thuần + các khoản (không cộng carryOver)
   const remain=inc-allocTot;
   const balanced=inc>0&&Math.abs(remain)<=1; // ±1đ để tránh lỗi làm tròn
@@ -987,12 +1004,11 @@ function renderMonth(){
           <span style="color:${md.carryOver>0?'var(--green)':'var(--red)'};font-weight:600">${md.carryOver>0?'+':''}${fmt(md.carryOver)}</span>
         </div>`:''}
         ${(()=>{
-          const key=mkKey(S.curMonth,S.curYear);
-          const debtPayments=S.debts.filter(d=>d.payments&&d.payments.length>0).flatMap(d=>d.payments.filter(p=>{
-            const pm=new Date(p.date).getMonth();const py=new Date(p.date).getFullYear();
-            return pm===S.curMonth&&py===S.curYear;
+          const pays=S.debts.filter(d=>d.payments&&d.payments.length>0).flatMap(d=>d.payments.filter(p=>{
+            const pd=new Date(p.date);
+            return pd.getMonth()===S.curMonth&&pd.getFullYear()===S.curYear&&(p.allocTo||'chi')==='chi';
           }).map(p=>({name:d.name,amount:p.amount})));
-          return debtPayments.map(p=>`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px">
+          return pays.map(p=>`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px">
             <span style="color:var(--text2)">💰 Thu nợ ${p.name}</span>
             <span style="color:var(--green);font-weight:600">+${fmt(p.amount)}</span>
           </div>`).join('');
@@ -1007,7 +1023,7 @@ function renderMonth(){
     </div>`;
   const allocItems=[
     {name:'🐷 Hụi mẹ',amt:al.hui||0,color:'var(--purple)'},
-    {name:'💰 Tiết kiệm',amt:al.saving||0,color:'var(--blue)'},
+    {name:'💰 Tiết kiệm',amt:(al.saving||0)+_debtSaving,color:'var(--blue)'},
     ...extraNormal.map(e=>({name:'📦 '+e.name,amt:e.amt,color:'var(--green)'})),
   ];
   const fixedRows=fixedTotal>0?`
@@ -1675,11 +1691,7 @@ function doPayDebt(){
     if(pd.paid>=pd.amount)pd.closed=true;
     debtLeft-=canPay;
   });
-  // Phân về khoản được chọn
   const allocTo=document.getElementById('payDebtAllocTo')?.value||'chi';
-  const key=curKey();const md=getMonthData(key);const al=md.alloc;
-  if(allocTo==='chi') al.chi=(al.chi||0)+payAmt;
-  else if(allocTo==='saving') al.saving=(al.saving||0)+payAmt;
   save();closeModal('payDebt');renderDebt();renderMonth();
   toast(`Thu ${fmt(payAmt)} → ${allocTo==='chi'?'khoản chi tháng':'tiết kiệm'} ✓`,'info');
 }
@@ -1698,112 +1710,160 @@ function renderDebt(){
     if(!d.closed)byPerson[k].totalOwed+=(d.amount-d.paid);
   });
 
-  const people=Object.values(byPerson).filter(p=>p.totalOwed>0).sort((a,b)=>b.totalOwed-a.totalOwed);
+  const showHistory=_debtState['__showHistory']===true;
+  const activePeople=Object.values(byPerson).filter(p=>p.totalOwed>0).sort((a,b)=>b.totalOwed-a.totalOwed);
+  const closedPeople=Object.values(byPerson).filter(p=>p.totalOwed<=0&&p.debts.length>0).sort((a,b)=>b.debts.length-a.debts.length);
+  const people=showHistory?[...activePeople,...closedPeople]:activePeople;
+  // Header với nút lịch sử global
+  const histBtn=document.getElementById('debtHistoryBtn');
+  if(histBtn){histBtn.style.opacity=showHistory?1:0.4;histBtn.title=showHistory?'Ẩn lịch sử':'Xem nợ đã thu';}
   if(!people.length){el.innerHTML='<div class="empty"><div class="ei">🤝</div>Không có khoản nợ nào</div>';return;}
 
-  el.innerHTML=people.map(p=>{
+  // Helper render 1 person card
+  function renderPersonCard(p, isClosed){
     const pk=p.name.toLowerCase().trim();
     const expanded=_debtState[pk+'_open']===true;
-    const showClosed=_debtState[pk+'_closed']===true; // 🔍 hiện nợ cũ
-    const deductMode=_debtState[pk+'_deduct']===true; // 🔄 chế độ trừ nợ cũ nhất
-
-    // Timeline: gộp cho mượn + thu nợ
+    const editMode=_debtState[pk+'_edit']===true;
+    const deductMode=_debtState[pk+'_deduct']===true;
     const events=[];
     p.debts.forEach(d=>{
-      events.push({date:d.date,type:'lend',amt:d.amount,note:d.note||'',_idx:d._idx,closed:d.closed});
-      (d.payments||[]).forEach((pay,pi)=>{
-        events.push({date:pay.date,type:'pay',amt:pay.amount,note:pay.note||'',_idx:d._idx,_pi:pi,allocTo:pay.allocTo});
-      });
+      events.push({date:d.date,type:'lend',amt:d.amount,note:d.note||'',_idx:d._idx});
+      (d.payments||[]).forEach((pay,pi)=>events.push({date:pay.date,type:'pay',amt:pay.amount,note:pay.note||'',_idx:d._idx,_pi:pi,allocTo:pay.allocTo}));
     });
-
-    // Chế độ 🔄: nhóm theo khoản nợ, trừ cũ nhất
+    events.sort((a,b)=>new Date(b.date)-new Date(a.date));
     let body='';
     if(deductMode){
       const openD=p.debts.filter(d=>!d.closed).sort((a,b)=>new Date(a.date)-new Date(b.date));
-      body=openD.map(d=>{
-        const rem=d.amount-d.paid;
-        return `<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div>
-              <div style="font-size:12px;font-weight:500">${fmtD(d.date)}${d.note?' · '+d.note:''}</div>
-              <div style="font-size:11px;color:var(--text3)">Gốc: ${fmt(d.amount)}${d.paid>0?' · Đã trả: '+fmt(d.paid):''}</div>
-            </div>
-            <div style="font-size:14px;font-weight:700;color:var(--amber)">${fmt(rem)}</div>
-          </div>
-        </div>`;
-      }).join('')+`<div style="font-size:11px;color:var(--text3);margin-top:8px;padding:6px;background:rgba(255,255,255,0.03);border-radius:6px">💡 Khi thu nợ, tiền sẽ trừ vào khoản cũ nhất trước</div>`;
+      body=openD.map(d=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+        <div><div style="font-size:12px;font-weight:500">${fmtD(d.date)}${d.note?' · '+d.note:''}</div>
+        <div style="font-size:11px;color:var(--text3)">Gốc: ${fmt(d.amount)}${d.paid>0?' · Đã trả: '+fmt(d.paid):''}</div></div>
+        <div style="font-size:14px;font-weight:700;color:var(--amber)">${fmt(d.amount-d.paid)}</div>
+      </div>`).join('')+`<div style="font-size:11px;color:var(--text3);margin-top:8px;padding:6px;background:rgba(255,255,255,0.03);border-radius:6px">💡 Thu nợ sẽ trừ vào khoản cũ nhất trước</div>`;
     } else {
-      // Chế độ timeline
-      const visibleEvents=events.filter(ev=>showClosed||!ev.closed||ev.type==='pay').sort((a,b)=>new Date(b.date)-new Date(a.date));
-      body=visibleEvents.map(ev=>`
-        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
-          <div style="font-size:16px">${ev.type==='lend'?'➕':'💵'}</div>
-          <div style="flex:1">
-            <div style="font-size:12px;font-weight:600;color:${ev.type==='lend'?'var(--amber)':'var(--green)'}">${ev.type==='lend'?'+':'-'}${fmt(ev.amt)}</div>
-            <div style="font-size:11px;color:var(--text3)">${fmtD(ev.date)}${ev.note?' · '+ev.note:''}${ev.allocTo?' → '+(ev.allocTo==='chi'?'chi tháng':'tiết kiệm'):''}</div>
-          </div>
-          <div style="display:flex;gap:4px">
-            ${ev.type==='lend'?`<button onclick="delDebt(${ev._idx});event.stopPropagation()" style="background:var(--red-bg);border:1px solid rgba(245,101,101,0.3);color:var(--red);border-radius:6px;padding:3px 7px;font-size:12px;cursor:pointer">🗑️</button>`:''}
-            ${ev.type==='pay'?`<button onclick="openEditPayment(${ev._idx},${ev._pi});event.stopPropagation()" style="background:var(--card);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:3px 7px;font-size:12px;cursor:pointer">✏️</button>`:''}
-          </div>
-        </div>`).join('');
+      body=events.map(ev=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+        <div style="font-size:15px">${ev.type==='lend'?'➕':'💵'}</div>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:600;color:${ev.type==='lend'?'var(--amber)':'var(--green)'}">${ev.type==='lend'?'+':'-'}${fmt(ev.amt)}</div>
+          <div style="font-size:11px;color:var(--text3)">${fmtD(ev.date)}${ev.note?' · '+ev.note:''}${ev.allocTo?' → '+(ev.allocTo==='chi'?'chi tháng':'tiết kiệm'):''}</div>
+        </div>
+        ${editMode?`<div style="display:flex;gap:4px">
+          <button onclick="${ev.type==='lend'?`delDebt(${ev._idx})`:`delPayment(${ev._idx},${ev._pi})`};event.stopPropagation()" style="background:var(--red-bg);border:1px solid rgba(245,101,101,0.3);color:var(--red);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">Xóa</button>
+          <button onclick="openEditPayment(${ev._idx},${ev.type==='lend'?-1:ev._pi});event.stopPropagation()" style="background:var(--card);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">Sửa</button>
+        </div>`:''}
+      </div>`).join('');
     }
-
     return `<div class="debt-card">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div style="display:flex;align-items:center;gap:10px;cursor:pointer;flex:1" onclick="_debtState['${pk}_open']=!_debtState['${pk}_open'];renderDebt()">
-          <div style="font-size:22px">👤</div>
-          <div>
-            <div style="font-size:14px;font-weight:600">${p.name}</div>
-            <div style="font-size:11px;color:var(--text3)">còn nợ</div>
+          <div style="font-size:20px">👤</div>
+          <div><div style="font-size:14px;font-weight:600">${p.name}</div>
+            <div style="font-size:11px;color:var(--text3)">${isClosed?'đã thu xong':'còn nợ'}</div>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
-          <div style="font-size:17px;font-weight:700;color:var(--amber);cursor:pointer" onclick="_debtState['${pk}_open']=!_debtState['${pk}_open'];renderDebt()">${fmt(p.totalOwed)}</div>
-          <button onclick="_debtState['${pk}_closed']=!_debtState['${pk}_closed'];renderDebt();event.stopPropagation()" title="Xem nợ đã thu" style="background:none;border:none;font-size:15px;cursor:pointer;padding:3px;opacity:${showClosed?1:0.4}">🔍</button>
-          <button onclick="_debtState['${pk}_deduct']=!_debtState['${pk}_deduct'];if(_debtState['${pk}_deduct'])_debtState['${pk}_open']=true;renderDebt();event.stopPropagation()" title="Chế độ trừ nợ cũ nhất" style="background:none;border:none;font-size:15px;cursor:pointer;padding:3px;opacity:${deductMode?1:0.4}">🔄</button>
-          <button onclick="openPayDebt(${p.debts[0]._idx});event.stopPropagation()" style="background:var(--accent);border:none;color:#000;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;font-weight:600">💵 Thu</button>
+          <div style="font-size:17px;font-weight:700;color:${isClosed?'var(--green)':'var(--amber)'};cursor:pointer" onclick="_debtState['${pk}_open']=!_debtState['${pk}_open'];renderDebt()">${isClosed?'✅':fmt(p.totalOwed)}</div>
+          <button onclick="_debtState['${pk}_edit']=!_debtState['${pk}_edit'];if(_debtState['${pk}_edit'])_debtState['${pk}_open']=true;renderDebt();event.stopPropagation()" style="background:none;border:none;font-size:14px;cursor:pointer;padding:3px;opacity:${editMode?1:0.4}">✏️</button>
+          ${!isClosed?`<button onclick="_debtState['${pk}_deduct']=!_debtState['${pk}_deduct'];if(_debtState['${pk}_deduct'])_debtState['${pk}_open']=true;renderDebt();event.stopPropagation()" style="background:none;border:none;font-size:14px;cursor:pointer;padding:3px;opacity:${deductMode?1:0.4}">🔄</button>`:''}
+          ${!isClosed?`<button onclick="openPayDebt(${p.debts[0]._idx});event.stopPropagation()" style="background:var(--accent);border:none;color:#000;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;font-weight:600">💵 Thu</button>`:''}
         </div>
       </div>
       ${expanded?`<div style="border-top:1px solid var(--border);margin-top:10px;padding-top:8px">
         ${body}
-        <button onclick="openAddDebtForPerson('${p.name}');event.stopPropagation()" style="width:100%;text-align:center;margin-top:8px;background:var(--card);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:7px;font-size:12px;cursor:pointer">+ Cho ${p.name} mượn thêm</button>
+        ${!isClosed?`<button onclick="openAddDebtForPerson('${p.name}');event.stopPropagation()" style="width:100%;text-align:center;margin-top:8px;background:var(--card);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:7px;font-size:12px;cursor:pointer">+ Cho ${p.name} mượn thêm</button>`:''}
       </div>`:''}
     </div>`;
-  }).join('');
+  }
 
-  // Ẩn debtHistory section nếu có
+  el.innerHTML=activePeople.map(p=>renderPersonCard(p,false)).join('');
+
+  // Lịch sử nợ cũ riêng phía dưới
   const dh=document.getElementById('debtHistory');
-  if(dh)dh.innerHTML='';
+  if(dh){
+    if(showHistory&&closedPeople.length){
+      dh.innerHTML='<div class="sec" style="margin:16px 0 8px">Nợ đã thu xong</div>'+closedPeople.map(p=>renderPersonCard(p,true)).join('');
+    } else {
+      dh.innerHTML='';
+    }
+  }
 }
 
 let debtExpanded={};
+let _editCtx={};
 const _debtState={};
 
-function openEditPayment(debtIdx,payIdx){
+function delPayment(debtIdx,payIdx){
+  if(!confirm('Xóa lần thu nợ này?'))return;
   const d=S.debts[debtIdx];const p=d.payments[payIdx];
-  const newAmt=prompt('Số tiền:',p.amount);
-  if(newAmt===null)return;
-  const parsedAmt=parseInt(newAmt.replace(/[^0-9]/g,''))||0;
-  if(parsedAmt<=0)return;
-  const newAlloc=confirm('Phân về Tiết kiệm? (OK=tiết kiệm, Hủy=chi tháng)')? 'saving':'chi';
-  // Điều chỉnh al
-  const key=curKey();const md=getMonthData(key);const al=md.alloc;
-  const oldAlloc=p.allocTo||'chi';
-  const diff=parsedAmt-p.amount;
-  // Hoàn lại khoản cũ
-  if(oldAlloc==='chi') al.chi=Math.max(0,(al.chi||0)-p.amount);
-  else al.saving=Math.max(0,(al.saving||0)-p.amount);
-  // Cộng khoản mới
-  if(newAlloc==='chi') al.chi=(al.chi||0)+parsedAmt;
-  else al.saving=(al.saving||0)+parsedAmt;
-  // Cập nhật payment
-  const oldAmt=p.amount;
-  p.amount=parsedAmt;p.allocTo=newAlloc;
-  // Cập nhật paid của debt
-  d.paid=d.paid-oldAmt+parsedAmt;
-  if(d.paid>=d.amount)d.closed=true; else d.closed=false;
+  // Hoàn lại al
+  d.paid-=p.amount;
+  d.payments.splice(payIdx,1);
+  if(d.paid<d.amount)d.closed=false;
   save();renderDebt();renderMonth();
+  toast('Đã xóa ✓','info');
+}
+function openEditPayment(debtIdx,payIdx){
+  // Lưu context để saveDebtEdit() dùng
+  _editCtx={debtIdx,payIdx};
+  const d=S.debts[debtIdx];
+  if(payIdx===-1){
+    // Sửa khoản cho mượn — mở modal addDebt điền sẵn
+    document.getElementById('debtName').value=d.name;
+    document.getElementById('debtName').disabled=true;
+    document.getElementById('debtAmt').value=d.amount.toLocaleString('vi-VN');
+    document.getElementById('debtDate').value=d.date||today();
+    document.getElementById('debtDue').value=d.dueDate||'';
+    document.getElementById('debtNote').value=d.note||'';
+    document.getElementById('addDebtTitle').textContent='✏️ Sửa khoản cho mượn';
+    document.getElementById('addDebtConfirmBtn').textContent='Lưu thay đổi';
+    document.getElementById('addDebtConfirmBtn').onclick=saveDebtEdit;
+    openModal('addDebt');
+  } else {
+    // Sửa lần thu nợ — mở modal payDebt điền sẵn
+    const p=d.payments[payIdx];
+    document.getElementById('payDebtIdx').value=debtIdx;
+    document.getElementById('payDebtTitle').textContent='✏️ Sửa lần thu nợ: '+d.name;
+    const personDebts=S.debts.filter(x=>x.name===d.name);
+    const totalOwed=personDebts.reduce((s,x)=>s+x.amount-x.paid,0)+p.amount; // cộng lại vì chưa trừ
+    document.getElementById('payDebtInfo').textContent=`Số tiền cũ: ${fmt(p.amount)}`;
+    document.getElementById('payDebtAmt').value=p.amount.toLocaleString('vi-VN');
+    document.getElementById('payDebtNote').value=p.note||'';
+    const sel=document.getElementById('payDebtAllocTo');
+    if(sel)sel.value=p.allocTo||'chi';
+    document.getElementById('payDebtConfirmBtn').textContent='Lưu thay đổi';
+    document.getElementById('payDebtConfirmBtn').onclick=()=>savePaymentEdit(debtIdx,payIdx);
+    openModal('payDebt');
+  }
+}
+function saveDebtEdit(){
+  const {debtIdx}=_editCtx;
+  const d=S.debts[debtIdx];
+  const newAmt=getMV('debtAmt');
+  if(newAmt<=0){toast('Số tiền không hợp lệ','error');return;}
+  d.amount=newAmt;
+  d.note=document.getElementById('debtNote').value.trim();
+  d.date=document.getElementById('debtDate').value;
+  d.dueDate=document.getElementById('debtDue').value||null;
+  // Reset form về mặc định
+  document.getElementById('debtName').disabled=false;
+  document.getElementById('addDebtTitle').textContent='+ Cho mượn tiền';
+  document.getElementById('addDebtConfirmBtn').textContent='Xác nhận';
+  document.getElementById('addDebtConfirmBtn').onclick=addDebt;
+  save();closeModal('addDebt');renderDebt();
+  toast('Đã cập nhật ✓','info');
+}
+function savePaymentEdit(debtIdx,payIdx){
+  const d=S.debts[debtIdx];const p=d.payments[payIdx];
+  const newAmt=getMV('payDebtAmt');
+  if(newAmt<=0){toast('Số tiền không hợp lệ','error');return;}
+  const newAlloc=document.getElementById('payDebtAllocTo')?.value||'chi';
+  d.paid=d.paid-p.amount+newAmt;
+  p.amount=newAmt;p.allocTo=newAlloc;
+  p.note=document.getElementById('payDebtNote').value.trim();
+  if(d.paid>=d.amount)d.closed=true; else d.closed=false;
+  // Reset confirm button
+  document.getElementById('payDebtConfirmBtn').textContent='✅ Xác nhận thu';
+  document.getElementById('payDebtConfirmBtn').onclick=doPayDebt;
+  save();closeModal('payDebt');renderDebt();renderMonth();
   toast('Đã cập nhật ✓','info');
 }
 function editPayment(debtIdx,payIdx){
@@ -1814,15 +1874,6 @@ function editPayment(debtIdx,payIdx){
   const newAlloc=cur==='chi'?'saving':'chi';
   // Toggle allocTo
   p.allocTo=newAlloc;
-  // Sửa al.chi và al.saving tương ứng
-  const key=curKey();const md=getMonthData(key);const al=md.alloc;
-  if(newAlloc==='saving'){
-    al.chi=Math.max(0,(al.chi||0)-p.amount);
-    al.saving=(al.saving||0)+p.amount;
-  } else {
-    al.saving=Math.max(0,(al.saving||0)-p.amount);
-    al.chi=(al.chi||0)+p.amount;
-  }
   save();renderDebt();renderMonth();
   toast(`Đã chuyển ${fmt(p.amount)} → ${newAlloc==='saving'?'tiết kiệm':'khoản chi tháng'} ✓`,'info');
 }
