@@ -650,6 +650,9 @@ select.if option{background:#1e1e28;}
     <div class="irow" style="margin-bottom:14px"><div class="ig"><div class="il">Ghi chú</div>
       <input type="text" class="if" id="editAssetNote" placeholder="Lãi, rút ra...">
     </div></div>
+    <div class="irow" id="editAssetGoldRow" style="display:none;margin-bottom:14px"><div class="ig"><div class="il">Số chỉ vàng hiện có</div>
+      <input type="number" step="0.01" class="if" id="editAssetChis" placeholder="0" style="margin-bottom:0">
+    </div></div>
     <button class="btn bp" onclick="saveAsset()">Lưu</button>
     <button class="bs" onclick="closeModal('editAsset')" style="width:100%;margin-top:8px;text-align:center">Hủy</button>
   </div>
@@ -1564,9 +1567,13 @@ function addAsset(){
   toast('Đã thêm ✓');
 }
 function openEditAsset(i){
+  const a=S.assets[i];
   document.getElementById('editAssetIdx').value=i;
-  document.getElementById('editAssetTitle').textContent='Cập nhật: '+S.assets[i].name;
+  document.getElementById('editAssetTitle').textContent='Cập nhật: '+a.name;
   document.getElementById('editAssetAmt').value='';document.getElementById('editAssetNote').value='';
+  const isG=a.name?.toLowerCase().includes('vàng');
+  const gr=document.getElementById('editAssetGoldRow');
+  if(gr){gr.style.display=isG?'':'none';if(isG)document.getElementById('editAssetChis').value=a.goldChis||0;}
   assetAdj=0;setAA(0);openModal('editAsset');
 }
 function saveAsset(){
@@ -1577,6 +1584,8 @@ function saveAsset(){
   S.assets[i].balance=nb;
   if(!S.assets[i].logs)S.assets[i].logs=[];
   S.assets[i].logs.unshift({date:today(),diff:nb-old,note,balAfter:nb});
+  const isG2=S.assets[i].name?.toLowerCase().includes('vàng');
+  if(isG2){const c=document.getElementById('editAssetChis');if(c)S.assets[i].goldChis=parseFloat(c.value)||0;}
   save();closeModal('editAsset');renderAssets();toast('Đã cập nhật ✓');
 }
 function openAssetLog(i){
@@ -1658,27 +1667,32 @@ function editAssetLog(assetIdx,logIdx){
 }
 function delAsset(i){if(confirm('Xóa "'+S.assets[i].name+'"?')){S.assets.splice(i,1);save();renderAssets();}}
 function renderAssets(){
-  const total=S.assets.reduce((s,a)=>s+(a.balance||0),0);
+  const isGoldAsset=a=>a.type==='gold'||a.name?.toLowerCase().includes('vàng');
+  const total=S.assets.filter(a=>!isGoldAsset(a)).reduce((s,a)=>s+(a.balance||0),0);
   document.getElementById('assetTotal').textContent=fmt(total);
   const el=document.getElementById('assetList');
   if(!S.assets.length){el.innerHTML='<div class="empty"><div class="ei">🏦</div>Chưa có tài sản nào</div>';return;}
-  el.innerHTML=S.assets.map((a,i)=>`
-    <div class="asset-card ${assetEditMode?'asset-edit-mode':''}" style="border-left-color:${ACOL[a.type]||'var(--green)'}">
-      <div class="row">
-        <div><div style="font-size:14px;font-weight:600">${AI[a.type]||'📦'} ${a.name}</div>
+  const isGold=a=>a.type==='gold'||a.name?.toLowerCase().includes('vàng');
+  el.innerHTML=S.assets.map((a,i)=>{
+    const gold=isGold(a);
+    const rightVal=gold
+      ?`<div style="font-size:17px;font-weight:700;color:var(--amber)">${a.goldChis||0} chỉ</div><div style="font-size:11px;color:var(--text3)">${fmt(a.balance)} đã mua</div>`
+      :`<div style="font-size:17px;font-weight:700;color:${ACOL[a.type]||'var(--green)'}">${fmt(a.balance)}</div>`;
+    return `<div class="asset-card" style="border-left-color:${ACOL[a.type]||'var(--green)'}">
+      <div class="row" style="cursor:pointer" onclick="openAssetLog(${i})">
+        <div>
+          <div style="font-size:14px;font-weight:600">${AI[a.type]||'📦'} ${a.name}</div>
           <div style="font-size:11px;color:var(--text3);margin-top:2px">${ATYPE[a.type]||''}</div>
         </div>
-        <div style="text-align:right">
-          <div style="font-size:17px;font-weight:700;color:${ACOL[a.type]||'var(--green)'}">${fmt(a.balance)}</div>
-          <div style="display:${assetEditMode?'flex':'none'};gap:5px;margin-top:7px;justify-content:flex-end;flex-wrap:wrap">
-            <button class="bs be" onclick="openEditAsset(${i})" style="padding:3px 8px;font-size:11px">Sửa</button>
-            <button class="bs" onclick="openAssetLog(${i})" style="padding:3px 8px;font-size:11px">Lịch sử</button>
-            <button class="bs ba" onclick="openTransferAsset(${i})" style="padding:3px 8px;font-size:11px">Chuyển</button>
-            <button class="bs bd" onclick="delAsset(${i})" style="padding:3px 8px;font-size:11px">Xóa</button>
-          </div>
-        </div>
+        <div style="text-align:right">${rightVal}</div>
       </div>
-    </div>`).join('');
+      ${assetEditMode?`<div style="display:flex;gap:5px;margin-top:8px;justify-content:flex-end;flex-wrap:wrap">
+        <button class="bs be" onclick="event.stopPropagation();openEditAsset(${i})" style="padding:3px 8px;font-size:11px">Sửa</button>
+        <button class="bs ba" onclick="event.stopPropagation();openTransferAsset(${i})" style="padding:3px 8px;font-size:11px">Chuyển</button>
+        <button class="bs bd" onclick="event.stopPropagation();delAsset(${i})" style="padding:3px 8px;font-size:11px">Xóa</button>
+      </div>`:''}
+    </div>`;
+  }).join('');
 }
 
 // ── NỢ ──
