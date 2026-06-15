@@ -678,12 +678,15 @@ select.if option{background:#1e1e28;}
     <input type="hidden" id="taFromIdx">
     <div style="font-size:12px;color:var(--text2);margin-bottom:14px" id="taFromInfo"></div>
     <div class="irow"><div class="ig"><div class="il">Chuyển đến</div>
-      <select class="if" id="taToSel">
+      <select class="if" id="taToSel" onchange="toggleTaGoldRow()">
         <option value="external">👤 Gửi ra ngoài (mẹ giữ, gửi NH...)</option>
       </select>
     </div></div>
     <div class="irow"><div class="ig"><div class="il">Số tiền (₫)</div>
       <input type="text" inputmode="numeric" class="if mi" id="taAmt" placeholder="0">
+    </div></div>
+    <div class="irow" id="taGoldRow" style="display:none"><div class="ig"><div class="il">Số chỉ vàng mua được (chỉ)</div>
+      <input type="number" step="1" min="0" class="if" id="taGoldChis" placeholder="0" style="margin-bottom:0">
     </div></div>
     <div class="irow"><div class="ig"><div class="il">Ngày</div>
       <input type="date" class="if" id="taDate" style="margin-bottom:0">
@@ -1666,10 +1669,22 @@ function openAssetLog(i){
     </div>`).join('');
   openModal('assetLog');
 }
+function toggleTaGoldRow(){
+  const sel=document.getElementById('taToSel');
+  const row=document.getElementById('taGoldRow');
+  if(!sel||!row)return;
+  const opt=sel.options[sel.selectedIndex];
+  const toIdx=parseInt(opt.value);
+  const isGold=!isNaN(toIdx)&&S.assets[toIdx]&&isGoldAsset(S.assets[toIdx]);
+  row.style.display=isGold?'':'none';
+}
+function isGoldAsset(a){return a.name?.toLowerCase().includes('vàng');}
 function openTransferAsset(i){
   const a=S.assets[i];
   document.getElementById('taFromIdx').value=i;
   document.getElementById('taDate').value=today();
+  document.getElementById('taGoldChis').value='';
+  document.getElementById('taGoldRow').style.display='none';
   document.getElementById('transferAssetTitle').textContent='Chuyển từ: '+a.name;
   document.getElementById('taFromInfo').textContent=`Số dư hiện tại: ${fmt(a.balance)}`;
   document.getElementById('taAmt').value='';document.getElementById('taNote').value='';
@@ -1688,6 +1703,13 @@ function doTransferAsset(){
   fromAsset.balance-=amt;
   if(!fromAsset.logs)fromAsset.logs=[];
   const taDate=document.getElementById('taDate')?.value||today();
+  const toSel=document.getElementById('taToSel');
+  const toOpt=toSel?.options[toSel.selectedIndex];
+  const toIdxCheck=parseInt(toOpt?.value);
+  if(!isNaN(toIdxCheck)&&S.assets[toIdxCheck]&&isGoldAsset(S.assets[toIdxCheck])){
+    const chis=parseInt(document.getElementById('taGoldChis')?.value)||0;
+    S.assets[toIdxCheck].goldChis=(S.assets[toIdxCheck].goldChis||0)+chis;
+  }
   fromAsset.logs.unshift({date:taDate,diff:-amt,note:`→ ${note}`,balAfter:fromAsset.balance});
   if(toVal.startsWith('asset_')){
     const toIdx=parseInt(toVal.replace('asset_',''));
@@ -1715,7 +1737,7 @@ function delAsset(i){if(confirm('Xóa "'+S.assets[i].name+'"?')){S.assets.splice
 function renderAssets(){
   const isGoldAsset=a=>a.type==='gold'||a.name?.toLowerCase().includes('vàng');
   const total=S.assets.filter(a=>!isGoldAsset(a)).reduce((s,a)=>s+(a.balance||0),0);
-  const totalChis=S.assets.filter(a=>isGoldAsset(a)).reduce((s,a)=>s+(a.goldChis||0),0);
+  const totalChis=S.assets.filter(a=>isGoldAsset(a)).reduce((s,a)=>s+(parseInt(a.goldChis)||0),0);
   const goldSummary=document.getElementById('assetGoldSummary');
   if(goldSummary){
     goldSummary.style.display=totalChis>0?'block':'none';
