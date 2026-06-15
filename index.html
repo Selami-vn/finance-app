@@ -1684,7 +1684,8 @@ function openTransferAsset(i){
   document.getElementById('taFromIdx').value=i;
   document.getElementById('taDate').value=today();
   document.getElementById('taGoldChis').value='';
-  document.getElementById('taGoldRow').style.display='none';
+  // Delay để dropdown populate xong rồi mới check
+  setTimeout(toggleTaGoldRow, 50);
   document.getElementById('transferAssetTitle').textContent='Chuyển từ: '+a.name;
   document.getElementById('taFromInfo').textContent=`Số dư hiện tại: ${fmt(a.balance)}`;
   document.getElementById('taAmt').value='';document.getElementById('taNote').value='';
