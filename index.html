@@ -1708,9 +1708,9 @@ function doTransferAsset(){
   if(!fromAsset.logs)fromAsset.logs=[];
   const taDate=document.getElementById('taDate')?.value||today();
   const toSel=document.getElementById('taToSel');
-  const toVal=toSel?.options[toSel?.selectedIndex]?.value||'';
-  if(toVal.startsWith('asset_')){
-    const toIdxCheck=parseInt(toVal.replace('asset_',''));
+  const toVal2=toSel?.options[toSel?.selectedIndex]?.value||'';
+  if(toVal2.startsWith('asset_')){
+    const toIdxCheck=parseInt(toVal2.replace('asset_',''));
     if(!isNaN(toIdxCheck)&&S.assets[toIdxCheck]&&isGoldAsset(S.assets[toIdxCheck])){
       const chis=parseInt(document.getElementById('taGoldChis')?.value)||0;
       S.assets[toIdxCheck].goldChis=(S.assets[toIdxCheck].goldChis||0)+chis;
