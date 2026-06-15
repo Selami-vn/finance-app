@@ -1673,9 +1673,12 @@ function toggleTaGoldRow(){
   const sel=document.getElementById('taToSel');
   const row=document.getElementById('taGoldRow');
   if(!sel||!row)return;
-  const opt=sel.options[sel.selectedIndex];
-  const toIdx=parseInt(opt.value);
-  const isGold=!isNaN(toIdx)&&S.assets[toIdx]&&isGoldAsset(S.assets[toIdx]);
+  const val=sel.options[sel.selectedIndex]?.value||'';
+  let isGold=false;
+  if(val.startsWith('asset_')){
+    const idx=parseInt(val.replace('asset_',''));
+    isGold=!isNaN(idx)&&S.assets[idx]&&isGoldAsset(S.assets[idx]);
+  }
   row.style.display=isGold?'':'none';
 }
 function isGoldAsset(a){return a.name?.toLowerCase().includes('vàng');}
@@ -1705,11 +1708,13 @@ function doTransferAsset(){
   if(!fromAsset.logs)fromAsset.logs=[];
   const taDate=document.getElementById('taDate')?.value||today();
   const toSel=document.getElementById('taToSel');
-  const toOpt=toSel?.options[toSel.selectedIndex];
-  const toIdxCheck=parseInt(toOpt?.value);
-  if(!isNaN(toIdxCheck)&&S.assets[toIdxCheck]&&isGoldAsset(S.assets[toIdxCheck])){
-    const chis=parseInt(document.getElementById('taGoldChis')?.value)||0;
-    S.assets[toIdxCheck].goldChis=(S.assets[toIdxCheck].goldChis||0)+chis;
+  const toVal=toSel?.options[toSel?.selectedIndex]?.value||'';
+  if(toVal.startsWith('asset_')){
+    const toIdxCheck=parseInt(toVal.replace('asset_',''));
+    if(!isNaN(toIdxCheck)&&S.assets[toIdxCheck]&&isGoldAsset(S.assets[toIdxCheck])){
+      const chis=parseInt(document.getElementById('taGoldChis')?.value)||0;
+      S.assets[toIdxCheck].goldChis=(S.assets[toIdxCheck].goldChis||0)+chis;
+    }
   }
   fromAsset.logs.unshift({date:taDate,diff:-amt,note:`→ ${note}`,balAfter:fromAsset.balance});
   if(toVal.startsWith('asset_')){
