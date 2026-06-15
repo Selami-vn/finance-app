@@ -352,9 +352,17 @@ select.if option{background:#1e1e28;}
 <!-- ══ TÀI SẢN ══ -->
 <div class="page" id="page-assets">
   <div class="hero">
-    <div class="hero-label">TỔNG TÀI SẢN</div>
-    <div class="hero-val g" id="assetTotal">0 ₫</div>
-    <div class="hero-sub">Tất cả tài sản tích lũy</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div class="hero-label">TỔNG TÀI SẢN</div>
+        <div class="hero-val g" id="assetTotal">0 ₫</div>
+        <div class="hero-sub">Tất cả tài sản tích lũy</div>
+      </div>
+      <div id="assetGoldSummary" style="display:none;text-align:right">
+        <div class="hero-label">VÀNG</div>
+        <div style="font-size:28px;font-weight:700;color:#F5C518" id="assetGoldChis">0 chỉ</div>
+      </div>
+    </div>
   </div>
   <div class="row" style="margin-bottom:9px">
     <div class="sec" style="margin:0">Các khoản tài sản</div>
@@ -639,19 +647,23 @@ select.if option{background:#1e1e28;}
     <div class="mh"></div>
     <div class="mt" id="editAssetTitle">Cập nhật tài sản</div>
     <input type="hidden" id="editAssetIdx">
-    <div class="adj">
+    <input type="hidden" id="editAssetLogIdx" value="-1">
+    <div class="adj" id="editAssetAdj">
       <button class="ao active" id="aa0" onclick="setAA(0)">+ Cộng vào</button>
       <button class="ao" id="aa1" onclick="setAA(1)">− Trừ ra</button>
       <button class="ao" id="aa2" onclick="setAA(2)">= Đặt mới</button>
     </div>
     <div class="irow"><div class="ig"><div class="il">Số tiền (₫)</div>
-      <input type="text" inputmode="numeric" class="if mi" id="editAssetAmt" placeholder="0">
+      <input type="text" inputmode="numeric" class="if mi" id="editAssetAmt" placeholder="0" oninput="formatMoneyInput(this)">
+    </div></div>
+    <div class="irow" id="editAssetGoldRow" style="display:none"><div class="ig"><div class="il">Số chỉ vàng (chỉ)</div>
+      <input type="number" step="1" min="0" class="if" id="editAssetChis" placeholder="0" style="margin-bottom:0">
+    </div></div>
+    <div class="irow"><div class="ig"><div class="il">Ngày</div>
+      <input type="date" class="if" id="editAssetDate" style="margin-bottom:0">
     </div></div>
     <div class="irow" style="margin-bottom:14px"><div class="ig"><div class="il">Ghi chú</div>
-      <input type="text" class="if" id="editAssetNote" placeholder="Lãi, rút ra...">
-    </div></div>
-    <div class="irow" id="editAssetGoldRow" style="display:none;margin-bottom:14px"><div class="ig"><div class="il">Số chỉ vàng hiện có</div>
-      <input type="number" step="0.01" class="if" id="editAssetChis" placeholder="0" style="margin-bottom:0">
+      <input type="text" class="if" id="editAssetNote" placeholder="Lãi, rút ra, mua vàng...">
     </div></div>
     <button class="btn bp" onclick="saveAsset()">Lưu</button>
     <button class="bs" onclick="closeModal('editAsset')" style="width:100%;margin-top:8px;text-align:center">Hủy</button>
@@ -673,6 +685,9 @@ select.if option{background:#1e1e28;}
     <div class="irow"><div class="ig"><div class="il">Số tiền (₫)</div>
       <input type="text" inputmode="numeric" class="if mi" id="taAmt" placeholder="0">
     </div></div>
+    <div class="irow"><div class="ig"><div class="il">Ngày</div>
+      <input type="date" class="if" id="taDate" style="margin-bottom:0">
+    </div></div>
     <div class="irow" style="margin-bottom:14px"><div class="ig"><div class="il">Ghi chú</div>
       <input type="text" class="if" id="taNote" placeholder="Chuyển mẹ giữ, gửi NH...">
     </div></div>
@@ -686,6 +701,7 @@ select.if option{background:#1e1e28;}
   <div class="modal">
     <div class="mh"></div>
     <div class="mt" id="assetLogTitle">Lịch sử</div>
+    <input type="hidden" id="assetLogAssetIdx">
     <div id="assetLogList"></div>
     <button class="bs" onclick="closeModal('assetLog')" style="width:100%;margin-top:14px;text-align:center">Đóng</button>
   </div>
@@ -1569,29 +1585,70 @@ function addAsset(){
 function openEditAsset(i){
   const a=S.assets[i];
   document.getElementById('editAssetIdx').value=i;
+  document.getElementById('editAssetLogIdx').value=-1;
   document.getElementById('editAssetTitle').textContent='Cập nhật: '+a.name;
-  document.getElementById('editAssetAmt').value='';document.getElementById('editAssetNote').value='';
+  document.getElementById('editAssetAmt').value='';
+  document.getElementById('editAssetNote').value='';
+  document.getElementById('editAssetDate').value=today();
+  document.getElementById('editAssetAdj').style.display='';
   const isG=a.name?.toLowerCase().includes('vàng');
   const gr=document.getElementById('editAssetGoldRow');
   if(gr){gr.style.display=isG?'':'none';if(isG)document.getElementById('editAssetChis').value=a.goldChis||0;}
   assetAdj=0;setAA(0);openModal('editAsset');
 }
+function openEditAssetLog(assetIdx,logIdx){
+  const a=S.assets[assetIdx];const l=a.logs[logIdx];
+  document.getElementById('editAssetIdx').value=assetIdx;
+  document.getElementById('editAssetLogIdx').value=logIdx;
+  document.getElementById('editAssetTitle').textContent='Sửa dòng: '+a.name;
+  document.getElementById('editAssetAmt').value=Math.abs(l.diff).toLocaleString('vi-VN');
+  document.getElementById('editAssetNote').value=l.note||'';
+  document.getElementById('editAssetDate').value=l.date||today();
+  document.getElementById('editAssetAdj').style.display='none'; // ẩn adj khi sửa log
+  const isG=a.name?.toLowerCase().includes('vàng');
+  const gr=document.getElementById('editAssetGoldRow');
+  if(gr){gr.style.display=isG?'':'none';if(isG&&document.getElementById('editAssetChis'))document.getElementById('editAssetChis').value=l.goldChis||a.goldChis||0;}
+  // Set adj theo dấu của diff
+  assetAdj=l.diff>=0?0:1;
+  openModal('editAsset');
+}
 function saveAsset(){
   const i=parseInt(document.getElementById('editAssetIdx').value);
-  const amt=getMV('editAssetAmt');const note=document.getElementById('editAssetNote').value.trim()||'Cập nhật';
-  const old=S.assets[i].balance;let nb=old;
-  if(assetAdj===0)nb=old+amt;else if(assetAdj===1)nb=old-amt;else nb=amt;
-  S.assets[i].balance=nb;
-  if(!S.assets[i].logs)S.assets[i].logs=[];
-  S.assets[i].logs.unshift({date:today(),diff:nb-old,note,balAfter:nb});
+  const logIdx=parseInt(document.getElementById('editAssetLogIdx').value);
+  const amt=getMV('editAssetAmt');
+  const note=document.getElementById('editAssetNote').value.trim()||'Cập nhật';
+  const date=document.getElementById('editAssetDate').value||today();
   const isG2=S.assets[i].name?.toLowerCase().includes('vàng');
-  if(isG2){const c=document.getElementById('editAssetChis');if(c)S.assets[i].goldChis=parseFloat(c.value)||0;}
-  save();closeModal('editAsset');renderAssets();toast('Đã cập nhật ✓');
+  const newChis=isG2?(parseInt(document.getElementById('editAssetChis')?.value)||0):undefined;
+
+  if(logIdx>=0){
+    // Sửa log cũ
+    const l=S.assets[i].logs[logIdx];
+    const oldDiff=l.diff;
+    const newDiff=assetAdj===1?-amt:amt;
+    S.assets[i].balance=S.assets[i].balance-oldDiff+newDiff;
+    l.diff=newDiff;l.note=note;l.date=date;l.balAfter=S.assets[i].balance;
+    if(isG2&&newChis!==undefined)S.assets[i].goldChis=newChis;
+  } else {
+    // Thêm log mới
+    const oldBal=S.assets[i].balance;let nb=oldBal;
+    if(assetAdj===0)nb=oldBal+amt;else if(assetAdj===1)nb=oldBal-amt;else nb=amt;
+    S.assets[i].balance=nb;
+    if(!S.assets[i].logs)S.assets[i].logs=[];
+    S.assets[i].logs.unshift({date,diff:nb-oldBal,note,balAfter:nb});
+    if(isG2&&newChis!==undefined)S.assets[i].goldChis=newChis;
+  }
+  save();closeModal('editAsset');
+  // Nếu đang có modal assetLog mở thì refresh nó
+  const logAssetIdx=parseInt(document.getElementById('assetLogAssetIdx')?.value||-1);
+  if(logAssetIdx===i)openAssetLog(i); else closeModal('assetLog');
+  renderAssets();toast('Đã cập nhật ✓');
 }
 function openAssetLog(i){
   const a=S.assets[i];
   document.getElementById('assetLogTitle').textContent=a.name+' · '+fmt(a.balance);
   const logs=a.logs||[];
+  document.getElementById('assetLogAssetIdx').value=i;
   document.getElementById('assetLogList').innerHTML=logs.length===0?'<div class="empty"><div class="ei">📋</div>Chưa có lịch sử</div>':logs.map((l,li)=>`
     <div class="txi" style="align-items:flex-start;gap:8px">
       <div class="txic" style="background:${l.diff>=0?'var(--green-bg)':'var(--red-bg)'};margin-top:2px">${l.diff>=0?'⬆️':'⬇️'}</div>
@@ -1601,10 +1658,10 @@ function openAssetLog(i){
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
         <div style="font-size:13px;font-weight:600;color:${l.diff>=0?'var(--green)':'var(--red)'}">${l.diff>=0?'+':''}${fmt(l.diff)}</div>
-        <div style="display:flex;gap:4px">
-          <button onclick="editAssetLog(${i},${li})" style="background:var(--card);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer">Sửa</button>
+        ${assetEditMode?`<div style="display:flex;gap:4px">
+          <button onclick="openEditAssetLog(${i},${li})" style="background:var(--card);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer">Sửa</button>
           <button onclick="delAssetLog(${i},${li})" style="background:var(--red-bg);border:1px solid rgba(245,101,101,0.3);color:var(--red);border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer">Xóa</button>
-        </div>
+        </div>`:''}
       </div>
     </div>`).join('');
   openModal('assetLog');
@@ -1612,6 +1669,7 @@ function openAssetLog(i){
 function openTransferAsset(i){
   const a=S.assets[i];
   document.getElementById('taFromIdx').value=i;
+  document.getElementById('taDate').value=today();
   document.getElementById('transferAssetTitle').textContent='Chuyển từ: '+a.name;
   document.getElementById('taFromInfo').textContent=`Số dư hiện tại: ${fmt(a.balance)}`;
   document.getElementById('taAmt').value='';document.getElementById('taNote').value='';
@@ -1629,12 +1687,13 @@ function doTransferAsset(){
   if(amt>fromAsset.balance)return toast('Số tiền vượt quá số dư','err');
   fromAsset.balance-=amt;
   if(!fromAsset.logs)fromAsset.logs=[];
-  fromAsset.logs.unshift({date:today(),diff:-amt,note:`→ ${note}`,balAfter:fromAsset.balance});
+  const taDate=document.getElementById('taDate')?.value||today();
+  fromAsset.logs.unshift({date:taDate,diff:-amt,note:`→ ${note}`,balAfter:fromAsset.balance});
   if(toVal.startsWith('asset_')){
     const toIdx=parseInt(toVal.replace('asset_',''));
     S.assets[toIdx].balance+=amt;
     if(!S.assets[toIdx].logs)S.assets[toIdx].logs=[];
-    S.assets[toIdx].logs.unshift({date:today(),diff:amt,note:`← từ ${fromAsset.name}: ${note}`,balAfter:S.assets[toIdx].balance});
+    S.assets[toIdx].logs.unshift({date:taDate,diff:amt,note:`← từ ${fromAsset.name}: ${note}`,balAfter:S.assets[toIdx].balance});
   }
   save();closeModal('transferAsset');renderAssets();
   toast(`Đã chuyển ${fmt(amt)} ✓`,'info');
@@ -1649,26 +1708,20 @@ function delAssetLog(assetIdx,logIdx){
   renderAssets();
 }
 function editAssetLog(assetIdx,logIdx){
-  const a=S.assets[assetIdx];
-  const log=a.logs[logIdx];
-  const newAmt=prompt('Số tiền (dương=vào, âm=ra):',log.diff);
-  if(newAmt===null)return;
-  const parsed=parseInt(newAmt.replace(/[^0-9-]/g,''));
-  if(isNaN(parsed))return;
-  const newNote=prompt('Ghi chú:',log.note);
-  if(newNote===null)return;
-  a.balance=a.balance-log.diff+parsed;
-  log.diff=parsed;
-  log.note=newNote;
-  log.balAfter=a.balance;
-  save();openAssetLog(assetIdx);
-  renderAssets();
-  toast('Đã cập nhật ✓','info');
+  closeModal('assetLog');
+  openEditAssetLog(assetIdx,logIdx);
 }
 function delAsset(i){if(confirm('Xóa "'+S.assets[i].name+'"?')){S.assets.splice(i,1);save();renderAssets();}}
 function renderAssets(){
   const isGoldAsset=a=>a.type==='gold'||a.name?.toLowerCase().includes('vàng');
   const total=S.assets.filter(a=>!isGoldAsset(a)).reduce((s,a)=>s+(a.balance||0),0);
+  const totalChis=S.assets.filter(a=>isGoldAsset(a)).reduce((s,a)=>s+(a.goldChis||0),0);
+  const goldSummary=document.getElementById('assetGoldSummary');
+  if(goldSummary){
+    goldSummary.style.display=totalChis>0?'block':'none';
+    const gc=document.getElementById('assetGoldChis');
+    if(gc)gc.textContent=totalChis+' chỉ';
+  }
   document.getElementById('assetTotal').textContent=fmt(total);
   const el=document.getElementById('assetList');
   if(!S.assets.length){el.innerHTML='<div class="empty"><div class="ei">🏦</div>Chưa có tài sản nào</div>';return;}
