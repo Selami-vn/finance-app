@@ -1301,17 +1301,29 @@ function saveAlloc(){
 
   // Auto-create saving asset if none exists
   let sa=S.assets.find(a=>a.type==='saving');
-  if(!sa && md.alloc.saving>0){
+  if(!sa){
     sa={id:'a_saving',name:'Tiết kiệm hàng tháng',type:'saving',balance:0,logs:[]};
     S.assets.push(sa);
   }
-  // Auto apply saving diff
-  const savingDiff=md.alloc.saving-oldSaving;
-  if(savingDiff!==0 && sa){
-    sa.balance+=savingDiff;
-    if(!sa.logs)sa.logs=[];
-    sa.logs.unshift({date:today(),diff:savingDiff,note:`Tiết kiệm phân bổ ${key}`,balAfter:sa.balance});
-  }
+  // Tính lại balance từ tất cả tháng + thu nợ về saving
+  const totalSavingAlloc=Object.values(S.months).reduce((s,m)=>s+(m.alloc?.saving||0),0);
+  const totalDebtSaving=S.debts.reduce((s,d)=>{
+    if(!d.payments)return s;
+    return s+d.payments.filter(p=>p.allocTo==='saving').reduce((ss,p)=>ss+p.amount,0);
+  },0);
+  // Giữ lại các log chuyển tiền thủ công (không phải từ phân bổ/thu nợ)
+  const manualLogs=(sa.logs||[]).filter(l=>!l.note?.startsWith('Tiết kiệm phân bổ')&&!l.note?.startsWith('← Thu nợ'));
+  const manualTotal=manualLogs.reduce((s,l)=>s+(l.diff||0),0);
+  sa.balance=totalSavingAlloc+totalDebtSaving+manualTotal;
+  sa.logs=[
+    ...Object.entries(S.months)
+      .filter(([k,m])=>(m.alloc?.saving||0)>0)
+      .map(([k,m])=>({date:m.alloc._saveDate||k,diff:m.alloc.saving,note:`Tiết kiệm phân bổ ${k}`,balAfter:0})),
+    ...S.debts.flatMap(d=>(d.payments||[]).filter(p=>p.allocTo==='saving').map(p=>({date:p.date,diff:p.amount,note:`← Thu nợ: ${d.name}`,balAfter:0}))),
+    ...manualLogs
+  ].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  // Ghi lại ngày lưu phân bổ tháng này
+  if(!md.alloc._saveDate)md.alloc._saveDate=today();
 
   // Auto-create hui asset if none exists
   let ha=S.assets.find(a=>a.type==='hui');
