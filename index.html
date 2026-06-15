@@ -1027,9 +1027,37 @@ function renderMonth(){
       </div>
       <div style="font-size:16px;font-weight:700;color:var(--amber)">${fmt(chiEff)}</div>
     </div>`;
+  const savingExpanded=_expandState[key+'_saving']===true;
+  const savingTotal=(al.saving||0)+_debtSaving;
+  // Thu nợ về tiết kiệm tháng này
+  const savingDebtLines=S.debts.filter(d=>d.payments&&d.payments.length>0).flatMap(d=>d.payments.filter(p=>{
+    const pd=parsePayDate(p.date);
+    return pd.getMonth()===S.curMonth&&pd.getFullYear()===S.curYear&&p.allocTo==='saving';
+  }).map(p=>({name:d.name,amount:p.amount})));
+
+  const savingRow=savingTotal>0?`
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:11px 14px;margin-bottom:7px;border-left:3px solid var(--blue)">
+      <div style="display:flex;align-items:center;justify-content:space-between;${savingDebtLines.length>0?'cursor:pointer':''}" onclick="${savingDebtLines.length>0?`_expandState['${key}_saving']=!_expandState['${key}_saving'];renderMonth()`:''}">
+        <div>
+          <div style="font-size:13px;font-weight:500">💰 Tiết kiệm</div>
+          ${inc>0?`<div style="font-size:10px;color:var(--text3)">${Math.round(savingTotal/inc*100)}% lương</div>`:''}
+        </div>
+        <div style="font-size:16px;font-weight:700;color:var(--blue)">${fmt(savingTotal)}</div>
+      </div>
+      ${savingExpanded&&savingDebtLines.length>0?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+        ${al.saving>0?`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px">
+          <span style="color:var(--text2)">Phân bổ ban đầu</span>
+          <span style="color:var(--blue);font-weight:600">${fmt(al.saving)}</span>
+        </div>`:''}
+        ${savingDebtLines.map(p=>`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px">
+          <span style="color:var(--text2)">💰 Thu nợ ${p.name}</span>
+          <span style="color:var(--green);font-weight:600">+${fmt(p.amount)}</span>
+        </div>`).join('')}
+      </div>`:''}
+    </div>`:'';
+
   const allocItems=[
     {name:'🐷 Hụi mẹ',amt:al.hui||0,color:'var(--purple)'},
-    {name:'💰 Tiết kiệm',amt:(al.saving||0)+_debtSaving,color:'var(--blue)'},
     ...extraNormal.map(e=>({name:'📦 '+e.name,amt:e.amt,color:'var(--green)'})),
   ];
   const fixedRows=fixedTotal>0?`
@@ -1070,7 +1098,7 @@ function renderMonth(){
         </div>`).join('')}
       </div>`:''}
     </div>`:'';
-  document.getElementById('allocList').innerHTML=chiRow+allocItems.filter(x=>x.amt>0).map(item=>`
+  document.getElementById('allocList').innerHTML=chiRow+savingRow+allocItems.filter(x=>x.amt>0).map(item=>`
     <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:11px 14px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;border-left:3px solid ${item.color}">
       <div><div style="font-size:13px;font-weight:500">${item.name}</div>
         ${inc>0&&item.amt>0?`<div style="font-size:10px;color:var(--text3)">${Math.round(item.amt/inc*100)}% lương</div>`:''}
