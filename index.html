@@ -1583,7 +1583,21 @@ function openAssetLog(i){
   const a=S.assets[i];
   document.getElementById('assetLogTitle').textContent=a.name+' · '+fmt(a.balance);
   const logs=a.logs||[];
-  document.getElementById('assetLogList').innerHTML=logs.length===0?'<div class="empty"><div class="ei">📋</div>Chưa có lịch sử</div>':logs.map(l=>`<div class="txi"><div class="txic" style="background:${l.diff>=0?'var(--green-bg)':'var(--red-bg)'}">${l.diff>=0?'⬆️':'⬇️'}</div><div style="flex:1"><div class="txn">${l.note}</div><div class="txd">${fmtD(l.date)} · Sau: ${fmt(l.balAfter)}</div></div><div style="font-size:13px;font-weight:600;color:${l.diff>=0?'var(--green)':'var(--red)'}">${l.diff>=0?'+':''}${fmt(l.diff)}</div></div>`).join('');
+  document.getElementById('assetLogList').innerHTML=logs.length===0?'<div class="empty"><div class="ei">📋</div>Chưa có lịch sử</div>':logs.map((l,li)=>`
+    <div class="txi" style="align-items:flex-start;gap:8px">
+      <div class="txic" style="background:${l.diff>=0?'var(--green-bg)':'var(--red-bg)'};margin-top:2px">${l.diff>=0?'⬆️':'⬇️'}</div>
+      <div style="flex:1">
+        <div class="txn">${l.note}</div>
+        <div class="txd">${fmtD(l.date)} · Sau: ${fmt(l.balAfter)}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <div style="font-size:13px;font-weight:600;color:${l.diff>=0?'var(--green)':'var(--red)'}">${l.diff>=0?'+':''}${fmt(l.diff)}</div>
+        <div style="display:flex;gap:4px">
+          <button onclick="editAssetLog(${i},${li})" style="background:var(--card);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer">Sửa</button>
+          <button onclick="delAssetLog(${i},${li})" style="background:var(--red-bg);border:1px solid rgba(245,101,101,0.3);color:var(--red);border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer">Xóa</button>
+        </div>
+      </div>
+    </div>`).join('');
   openModal('assetLog');
 }
 function openTransferAsset(i){
@@ -1615,6 +1629,32 @@ function doTransferAsset(){
   }
   save();closeModal('transferAsset');renderAssets();
   toast(`Đã chuyển ${fmt(amt)} ✓`,'info');
+}
+function delAssetLog(assetIdx,logIdx){
+  if(!confirm('Xóa dòng này?'))return;
+  const a=S.assets[assetIdx];
+  const log=a.logs[logIdx];
+  a.balance-=log.diff; // hoàn lại số tiền
+  a.logs.splice(logIdx,1);
+  save();openAssetLog(assetIdx); // refresh modal
+  renderAssets();
+}
+function editAssetLog(assetIdx,logIdx){
+  const a=S.assets[assetIdx];
+  const log=a.logs[logIdx];
+  const newAmt=prompt('Số tiền (dương=vào, âm=ra):',log.diff);
+  if(newAmt===null)return;
+  const parsed=parseInt(newAmt.replace(/[^0-9-]/g,''));
+  if(isNaN(parsed))return;
+  const newNote=prompt('Ghi chú:',log.note);
+  if(newNote===null)return;
+  a.balance=a.balance-log.diff+parsed;
+  log.diff=parsed;
+  log.note=newNote;
+  log.balAfter=a.balance;
+  save();openAssetLog(assetIdx);
+  renderAssets();
+  toast('Đã cập nhật ✓','info');
 }
 function delAsset(i){if(confirm('Xóa "'+S.assets[i].name+'"?')){S.assets.splice(i,1);save();renderAssets();}}
 function renderAssets(){
