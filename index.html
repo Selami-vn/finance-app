@@ -1666,6 +1666,68 @@ function seedGifts(){
 // ── ASSET EDIT TOGGLE ──
 let assetEditMode=false;
 // ══ ASSET FUNCTIONS ══
+function addAsset(){
+  const name=document.getElementById('assetName').value.trim();
+  const type=document.getElementById('assetType').value;
+  const bal=getMV('assetInitBal');
+  if(!name)return toast('Nhập tên tài sản','err');
+  S.assets.push({id:'a'+Date.now(),name,type,balance:bal,logs:bal?[{date:today(),diff:bal,note:'Số dư ban đầu',balAfter:bal}]:[]});
+  save();closeModal('addAsset');renderAssets();toast('Đã thêm tài sản ✓');
+}
+function addDebt(){
+  const name=document.getElementById('debtName').value.trim();
+  const amt=getMV('debtAmt');
+  const date=document.getElementById('debtDate').value||today();
+  const due=document.getElementById('debtDue').value||null;
+  const note=document.getElementById('debtNote').value.trim();
+  if(!name||!amt)return toast('Nhập đủ thông tin','err');
+  S.debts.push({id:'d'+Date.now(),name,amount:amt,paid:0,date,dueDate:due,note,closed:false,payments:[]});
+  save();closeModal('addDebt');renderDebt();toast('Đã thêm khoản nợ ✓');
+}
+function delDebt(i){if(confirm('Xóa khoản nợ?')){S.debts.splice(i,1);save();renderDebt();}}
+function delPayment(di,pi){
+  if(!confirm('Xóa lần thu nợ này?'))return;
+  const d=S.debts[di];const p=d.payments[pi];
+  d.paid-=p.amount;d.payments.splice(pi,1);
+  if(d.paid<d.amount)d.closed=false;
+  save();renderDebt();renderMonth();toast('Đã xóa ✓','info');
+}
+function openPayDebt(i){
+  const d=S.debts[i];
+  document.getElementById('payDebtIdx').value=i;
+  document.getElementById('payDebtTitle').textContent='Thu nợ: '+d.name;
+  const personDebts=S.debts.filter(x=>x.name===d.name&&!x.closed);
+  const totalOwed=personDebts.reduce((s,x)=>s+x.amount-x.paid,0);
+  document.getElementById('payDebtInfo').textContent=personDebts.length>1?
+    `Tổng còn nợ: ${fmt(totalOwed)} (${personDebts.length} khoản)`:
+    `Cho mượn: ${fmt(d.amount)} · Đã trả: ${fmt(d.paid)} · Còn: ${fmt(d.amount-d.paid)}`;
+  document.getElementById('payDebtAmt').value='';
+  document.getElementById('payDebtNote').value='';
+  openModal('payDebt');
+}
+function openAddDebtForPerson(name){
+  document.getElementById('debtName').value=name;
+  document.getElementById('debtDate').value=today();
+  openModal('addDebt');
+}
+function openEditPayment(di,pi){
+  _editCtx={di,pi};
+  const d=S.debts[di];
+  if(pi===-1){
+    document.getElementById('debtName').value=d.name;
+    document.getElementById('debtName').disabled=true;
+    document.getElementById('debtAmt').value=d.amount.toLocaleString('vi-VN');
+    document.getElementById('debtDate').value=d.date||today();
+    document.getElementById('debtDue').value=d.dueDate||'';
+    document.getElementById('debtNote').value=d.note||'';
+    openModal('addDebt');
+  }
+}
+function populateDebtFunds(){
+  document.getElementById('debtName').disabled=false;
+  document.getElementById('debtDate').value=today();
+}
+let _editCtx={};
 function setAA(n){assetAdj=n;['aa0','aa1','aa2'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.classList.toggle('active',i===n);});}
 function openAssetLog(i){
   const a=S.assets[i];
