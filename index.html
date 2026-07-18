@@ -656,7 +656,7 @@ select.if option{background:#1e1e28;}
     <div class="irow"><div class="ig"><div class="il">Số tiền (₫)</div>
       <input type="text" inputmode="numeric" class="if mi" id="editAssetAmt" placeholder="0" oninput="formatMoneyInput(this)">
     </div></div>
-    <div class="irow" id="editAssetGoldRow" style="display:none"><div class="ig"><div class="il">Số chỉ vàng (chỉ)</div>
+    <div class="irow" id="editAssetGoldRow" style="display:none"><div class="ig"><div class="il">Số chỉ mua thêm (chỉ)</div>
       <input type="number" step="1" min="0" class="if" id="editAssetChis" placeholder="0" style="margin-bottom:0">
     </div></div>
     <div class="irow"><div class="ig"><div class="il">Ngày</div>
@@ -1596,7 +1596,7 @@ function openEditAsset(i){
   document.getElementById('editAssetAdj').style.display='';
   const isG=a.name?.toLowerCase().includes('vàng');
   const gr=document.getElementById('editAssetGoldRow');
-  if(gr){gr.style.display=isG?'':'none';if(isG)document.getElementById('editAssetChis').value=a.goldChis||0;}
+  if(gr){gr.style.display=isG?'':'none';if(isG)document.getElementById('editAssetChis').value='';}
   assetAdj=0;setAA(0);openModal('editAsset');
 }
 function openEditAssetLog(assetIdx,logIdx){
@@ -1631,7 +1631,7 @@ function saveAsset(){
     const newDiff=assetAdj===1?-amt:amt;
     S.assets[i].balance=S.assets[i].balance-oldDiff+newDiff;
     l.diff=newDiff;l.note=note;l.date=date;l.balAfter=S.assets[i].balance;
-    if(isG2&&newChis!==undefined)S.assets[i].goldChis=newChis;
+    if(isG2&&newChis!==undefined)S.assets[i].goldChis=(parseInt(S.assets[i].goldChis)||0)+newChis;
   } else {
     // Thêm log mới
     const oldBal=S.assets[i].balance;let nb=oldBal;
@@ -1639,7 +1639,7 @@ function saveAsset(){
     S.assets[i].balance=nb;
     if(!S.assets[i].logs)S.assets[i].logs=[];
     S.assets[i].logs.unshift({date,diff:nb-oldBal,note,balAfter:nb});
-    if(isG2&&newChis!==undefined)S.assets[i].goldChis=newChis;
+    if(isG2&&newChis!==undefined)S.assets[i].goldChis=(parseInt(S.assets[i].goldChis)||0)+newChis;
   }
   save();closeModal('editAsset');
   // Nếu đang có modal assetLog mở thì refresh nó
