@@ -1158,7 +1158,13 @@ function rebuildAssets(){
     if(m.alloc.hui){const hi=Math.round(m.alloc.hui*(huiCfg.in/huiCfg.out));totalHui+=hi;huiLogs.push({date:today(),diff:hi,note:`Hụi ${k.replace('__','/')}`,balAfter:totalHui});}
   });
   let sa=S.assets.find(a=>a.type==='saving');
-  if(sa){sa.balance=totalSaving;sa.logs=[...savingLogs].reverse();}
+  if(sa){
+    // Trừ các lần đã chuyển ra khỏi tiết kiệm
+    const transferred=(sa.logs||[]).filter(l=>l.diff<0).reduce((s,l)=>s+l.diff,0);
+    sa.balance=totalSaving+transferred;
+    const allLogs=[...savingLogs.reverse(),...(sa.logs||[]).filter(l=>l.diff<0)].sort((a,b)=>new Date(b.date)-new Date(a.date));
+    sa.logs=allLogs;
+  }
   let ha=S.assets.find(a=>a.type==='hui');
   if(ha){ha.balance=totalHui;ha.logs=[...huiLogs].reverse();}
 }
