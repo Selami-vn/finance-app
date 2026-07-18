@@ -1011,7 +1011,7 @@ function renderMonth(){
     ${md.carryOver>0?'🎉 Dư':'⚠️ Bội chi'} tháng trước: ${md.carryOver>0?'+':''}${fmt(md.carryOver)} → cộng vào chi tiêu tháng này
   </div>`:'';
   document.getElementById('allocList').innerHTML=coRow
-    +allocRow('🐷','Hụi mẹ',al.hui||0,'var(--purple)')
+    +(al.hui?allocRow('🐷','Hụi mẹ',al.hui,'var(--purple)'):'')
     +allocRow('💰','Tiết kiệm',al.saving||0,'var(--blue)')
     +allocRow('💸','Chi tiêu',chiEff,'var(--amber)');
 
