@@ -1253,36 +1253,41 @@ function doCloseMonth(){
 }
 function renderSalary(){
   const inc=S.incomes||[];
-  const el=document.getElementById('incomeList');if(!el)return;
   const byMonth={};
-  inc.forEach((i,idx)=>{
-    if(!byMonth[i.salaryMonth])byMonth[i.salaryMonth]=[];
-    byMonth[i.salaryMonth].push({...i,_idx:idx});
+  inc.forEach((item,idx)=>{
+    const mk=item.salaryMonth||'';
+    if(!byMonth[mk])byMonth[mk]=[];
+    byMonth[mk].push({...item,_idx:idx});
   });
   const months=Object.keys(byMonth).sort((a,b)=>{
-    const [ma,ya]=a.split('/').map(Number);const [mb,yb]=b.split('/').map(Number);
+    const [ma,ya]=(a||'0/0').split('/').map(Number);
+    const [mb,yb]=(b||'0/0').split('/').map(Number);
     return ya!==yb?yb-ya:mb-ma;
   });
-  document.getElementById('yearMonthGrid').innerHTML=months.map(m=>{
-    const items=byMonth[m];const total=items.reduce((s,i)=>s+i.amount,0);
-    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center">
-      <div style="font-size:13px;font-weight:500">${m}</div>
-      <div style="font-size:15px;font-weight:700;color:var(--green)">${fmt(total)}</div>
-    </div>`;
-  }).join('');
-  el.innerHTML=inc.length===0?'<div class="empty"><div class="ei">💰</div>Chưa có thu nhập</div>':
-    [...inc].sort((a,b)=>new Date(b.date)-new Date(a.date)).map((i,idx)=>`
-    <div class="txi">
-      <div class="txic" style="background:var(--green-bg)">${II[i.type]||'💵'}</div>
-      <div style="flex:1"><div class="txn">${IL[i.type]||i.type}${i.note?' · '+i.note:''}</div>
-        <div class="txd">${fmtD(i.date)} · ${i.salaryMonth}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <div style="font-size:13px;font-weight:600;color:var(--green)">${fmt(i.amount)}</div>
-        ${salEditMode?`<button onclick="editIncome(${i._idx??idx})" style="background:var(--card);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer">Sửa</button>
-        <button onclick="delIncome(${i._idx??idx})" style="background:var(--red-bg);border:1px solid rgba(245,101,101,0.3);color:var(--red);border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer">Xóa</button>`:''}
-      </div>
-    </div>`).join('');
+  const el=document.getElementById('salaryHistory');
+  if(!el)return;
+  el.innerHTML=months.length===0?'<div class="empty"><div class="ei">💰</div>Chưa có thu nhập</div>':
+    months.map(m=>{
+      const items=byMonth[m];
+      const total=items.reduce((s,i)=>s+i.amount,0);
+      return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${items.length>1?8:0}px">
+          <div style="font-size:13px;font-weight:600">${m}</div>
+          <div style="font-size:15px;font-weight:700;color:var(--green)">${fmt(total)}</div>
+        </div>
+        ${items.map(i=>`<div class="txi" style="padding:6px 0;border-top:1px solid var(--border)">
+          <div class="txic" style="background:var(--green-bg)">${II[i.type]||'💵'}</div>
+          <div style="flex:1"><div class="txn">${IL[i.type]||i.type}${i.note?' · '+i.note:''}</div>
+            <div class="txd">${fmtD(i.date)}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="font-size:13px;font-weight:600;color:var(--green)">${fmt(i.amount)}</div>
+            ${salEditMode?`<button onclick="editIncome(${i._idx})" style="background:var(--card);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer">Sửa</button>
+            <button onclick="delIncome(${i._idx})" style="background:var(--red-bg);border:1px solid rgba(245,101,101,0.3);color:var(--red);border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer">Xóa</button>`:''}
+          </div>
+        </div>`).join('')}
+      </div>`;
+    }).join('');
   renderYear();
 }
 function renderAssets(){
