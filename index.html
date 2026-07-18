@@ -345,7 +345,10 @@ select.if option{background:#1e1e28;}
     </div>
     <button class="btn bp" onclick="addIncome()">+ Ghi nhận</button>
   </div>
-  <div class="sec">Tổng thu nhập theo tháng</div>
+  <div class="sec" style="display:flex;justify-content:space-between;align-items:center">
+    <span>Tổng thu nhập theo tháng</span>
+    <button onclick="toggleSalEditMode()" id="salEditBtn" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer">✏️ Sửa</button>
+  </div>
   <div id="salaryHistory"></div>
 </div>
 
@@ -1686,6 +1689,21 @@ function addDebt(){
   const due=document.getElementById('debtDue').value||null;
   const note=document.getElementById('debtNote').value.trim();
   if(!name||!amt)return toast('Nhập đủ thông tin','err');
+  // Edit mode: _editCtx.di set và pi===-1
+  if(_editCtx && typeof _editCtx.di==='number' && _editCtx.pi===-1){
+    const d=S.debts[_editCtx.di];
+    if(d){
+      d.amount=amt;d.date=date;d.dueDate=due;d.note=note;
+      // recalc closed
+      d.closed=d.paid>=d.amount;
+      _editCtx={};
+      document.getElementById('debtName').disabled=false;
+      save();closeModal('addDebt');renderDebt();toast('Đã cập nhật khoản nợ ✓');
+      return;
+    }
+  }
+  _editCtx={};
+  document.getElementById('debtName').disabled=false;
   S.debts.push({id:'d'+Date.now(),name,amount:amt,paid:0,date,dueDate:due,note,closed:false,payments:[]});
   save();closeModal('addDebt');renderDebt();toast('Đã thêm khoản nợ ✓');
 }
@@ -1715,6 +1733,39 @@ function openAddDebtForPerson(name){
   document.getElementById('debtDate').value=today();
   openModal('addDebt');
 }
+function renderPayDebtAllocOptions(){/* no alloc needed */}
+function doPayDebt(){
+  const i=parseInt(document.getElementById('payDebtIdx').value);
+  const d=S.debts[i];
+  if(!d)return toast('Không tìm thấy khoản nợ','err');
+  const personDebts=S.debts.filter(x=>x.name===d.name&&!x.closed).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const totalOwed=personDebts.reduce((s,x)=>s+x.amount-x.paid,0);
+  const rawAmt=getMV('payDebtAmt');
+  const payAmt=rawAmt>0?rawAmt:totalOwed;
+  if(payAmt<=0)return toast('Số tiền không hợp lệ','err');
+  const note=document.getElementById('payDebtNote').value.trim()||'Thu nợ';
+  const date=today();
+  // Phân bổ FIFO vào từng khoản
+  let remain=payAmt;
+  for(const debt of personDebts){
+    if(remain<=0)break;
+    const owing=debt.amount-debt.paid;
+    const paying=Math.min(owing,remain);
+    debt.paid+=paying;
+    remain-=paying;
+    debt.payments=debt.payments||[];
+    debt.payments.push({date,amount:paying,note});
+    if(debt.paid>=debt.amount)debt.closed=true;
+  }
+  // Cộng vào chi tiêu tháng hiện tại
+  const key=curKey();
+  const md=getMonthData(key);
+  md.spent=md.spent||[];
+  md.spent.push({id:'pay'+Date.now(),desc:note+' ('+d.name+')',amount:payAmt,date,type:'debt_collect'});
+  S.months[key]=md;
+  save();closeModal('payDebt');renderDebt();renderMonth();
+  toast(`Đã thu ${fmt(payAmt)} từ ${d.name} ✓`);
+}
 function openEditPayment(di,pi){
   _editCtx={di,pi};
   const d=S.debts[di];
@@ -1730,6 +1781,7 @@ function openEditPayment(di,pi){
 }
 function populateDebtFunds(){
   document.getElementById('debtName').disabled=false;
+  _editCtx={};
   document.getElementById('debtDate').value=today();
 }
 let _editCtx={};
@@ -1876,6 +1928,53 @@ function doTransferAsset(){
   save();closeModal('transferAsset');renderAssets();
   toast(`Đã chuyển ${fmt(amt)} ✓`,'info');
 }
+// ══ SALARY EDIT MODE ══
+let salEditMode=false;
+function toggleSalEditMode(){
+  salEditMode=!salEditMode;
+  const btn=document.getElementById('salEditBtn');
+  if(btn)btn.style.color=salEditMode?'var(--accent)':'var(--text2)';
+  renderSalary();
+}
+function addIncome(){
+  const type=document.getElementById('salType').value||'salary';
+  const amt=getMV('salAmt');
+  const date=document.getElementById('salDate').value||today();
+  const sm=document.getElementById('salMonth').value.trim();
+  const note=document.getElementById('salNote').value.trim();
+  if(!amt)return toast('Nhập số tiền','err');
+  // Edit mode
+  if(_editCtx && typeof _editCtx.incomeIdx==='number'){
+    const inc=S.incomes[_editCtx.incomeIdx];
+    if(inc){
+      inc.type=type;inc.amount=amt;inc.date=date;inc.salaryMonth=sm;inc.note=note;
+      _editCtx={};
+      save();closeModal('addIncome');renderSalary();toast('Đã cập nhật ✓');
+      return;
+    }
+  }
+  _editCtx={};
+  S.incomes=S.incomes||[];
+  S.incomes.push({id:'inc'+Date.now(),type,amount:amt,date,salaryMonth:sm,note});
+  save();closeModal('addIncome');renderSalary();toast('Đã thêm thu nhập ✓');
+}
+function editIncome(idx){
+  const inc=S.incomes[idx];
+  if(!inc)return;
+  _editCtx={incomeIdx:idx};
+  document.getElementById('salAmt').value=inc.amount.toLocaleString('vi-VN');
+  document.getElementById('salDate').value=inc.date||today();
+  document.getElementById('salMonth').value=inc.salaryMonth||'';
+  document.getElementById('salNote').value=inc.note||'';
+  document.getElementById('salType').value=inc.type||'salary';
+  openModal('addIncome');
+}
+function delIncome(idx){
+  if(!confirm('Xóa khoản thu nhập này?'))return;
+  S.incomes.splice(idx,1);
+  save();renderSalary();toast('Đã xóa','info');
+}
+
 // ══ DEBT FUNCTIONS ══
 const _debtState={};
 function renderDebt(){
