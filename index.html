@@ -1280,14 +1280,18 @@ function doCloseMonth(){
 function renderSalary(){
   const inc=S.incomes||[];
   const byMonth={};
-  inc.forEach((item,idx)=>{
+  inc.forEach((item,itemIdx)=>{
     const mk=item.salaryMonth||'';
+    // Lọc bỏ entry không có salaryMonth hợp lệ (NaN)
+    if(!mk||!mk.includes('/'))return;
+    const [mm,yy]=mk.split('/').map(Number);
+    if(isNaN(mm)||isNaN(yy))return;
     if(!byMonth[mk])byMonth[mk]=[];
-    byMonth[mk].push({...item,_idx:idx});
+    byMonth[mk].push({...item,_idx:itemIdx});
   });
   const months=Object.keys(byMonth).sort((a,b)=>{
-    const [ma,ya]=(a||'0/0').split('/').map(Number);
-    const [mb,yb]=(b||'0/0').split('/').map(Number);
+    const [ma,ya]=a.split('/').map(Number);
+    const [mb,yb]=b.split('/').map(Number);
     return ya!==yb?yb-ya:mb-ma;
   });
   const el=document.getElementById('salaryHistory');
@@ -1296,7 +1300,7 @@ function renderSalary(){
 
   const byYear={};
   months.forEach(m=>{
-    const y=(m||'0/0').split('/')[1]||'?';
+    const y=m.split('/')[1]||'?';
     if(!byYear[y])byYear[y]=[];
     byYear[y].push(m);
   });
@@ -1307,7 +1311,6 @@ function renderSalary(){
     const y=parseInt((i.salaryMonth||'').split('/')[1]);
     return y===curY;
   }).reduce((s,i)=>s+i.amount,0);
-  const grandTotal=inc.reduce((s,i)=>s+i.amount,0);
 
   const fmtTr=v=>{
     if(v>=1000000)return '+'+(v/1000000).toFixed(1).replace(/\.0$/,'')+' tr';
@@ -1315,17 +1318,19 @@ function renderSalary(){
   };
 
   let html='';
+  // Nút sửa chỉ 1 lần, ở trên cùng
+  html+=`<div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+    <button onclick="toggleSalEditMode()" id="salEditBtn" style="background:none;border:1px solid var(--border);color:${salEditMode?'var(--accent)':'var(--text3)'};border-radius:6px;padding:2px 9px;font-size:11px;cursor:pointer">✏️ Sửa</button>
+  </div>`;
+
   years.forEach(y=>{
-    html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin:14px 0 8px">
-      <div style="font-size:13px;font-weight:700;letter-spacing:0.8px;color:var(--text3)">${y}</div>
-      <button onclick="toggleSalEditMode()" id="salEditBtn" style="background:none;border:1px solid var(--border);color:${salEditMode?'var(--accent)':'var(--text3)'};border-radius:6px;padding:2px 9px;font-size:11px;cursor:pointer">✏️ Sửa</button>
-    </div>
+    html+=`<div style="font-size:12px;font-weight:700;letter-spacing:0.8px;color:var(--text3);margin:10px 0 8px">${y}</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px">`;
     byYear[y].forEach(m=>{
       const items=byMonth[m];
       const total=items.reduce((s,i)=>s+i.amount,0);
-      const [mm]=m.split('/');
-      const mLabel='Tháng '+parseInt(mm);
+      const mLabel='Tháng '+parseInt(m.split('/')[0]);
+      // items: border-bottom trên TẤT CẢ — dòng Tổng KHÔNG có border-top → 1 vạch duy nhất
       html+=`<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:13px 14px">
         <div style="font-size:15px;font-weight:700;margin-bottom:10px">${mLabel}</div>
         ${items.map(i=>`<div style="display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">
@@ -1342,7 +1347,7 @@ function renderSalary(){
             </div>`:''}
           </div>
         </div>`).join('')}
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:7px;border-top:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:7px">
           <div style="font-size:13px;color:var(--text3)">Tổng</div>
           <div style="font-size:13px;font-weight:700;color:var(--green)">${fmtTr(total)}</div>
         </div>
@@ -1351,11 +1356,8 @@ function renderSalary(){
     html+=`</div>`;
   });
 
-  // Banner tổng: chữ trái, số phải, vàng sáng ấm
   html+=`<div style="background:linear-gradient(135deg,rgba(250,189,90,0.07),rgba(250,189,90,0.02));border:1px solid rgba(250,189,90,0.2);border-radius:var(--r);padding:16px 20px;margin-top:14px;display:flex;justify-content:space-between;align-items:center">
-    <div>
-      <div style="font-size:12px;font-weight:600;letter-spacing:0.7px;color:rgba(250,189,90,0.6);margin-bottom:3px">TỔNG THU NHẬP ${curY}</div>
-    </div>
+    <div style="font-size:12px;font-weight:600;letter-spacing:0.7px;color:rgba(250,189,90,0.6)">TỔNG THU NHẬP ${curY}</div>
     <div style="font-size:26px;font-weight:700;color:#FABE5A">${fmt(curYearTotal)} đ</div>
   </div>`;
 
