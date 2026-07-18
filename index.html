@@ -1169,34 +1169,41 @@ function recalcAllocTip(){
   else if(rem>0){el.textContent=`Còn lại: ${fmt(rem)}`;el.style.color='var(--text3)';}
   else{el.textContent=`⚠️ Vượt lương: ${fmt(-rem)}`;el.style.color='var(--red)';}
 }
+function rebuildAssets(){
+  // Tính lại toàn bộ tài sản từ tất cả các tháng — dùng khi reset
+  const huiCfg=getHuiConfig();
+  let totalSaving=0, totalHui=0;
+  const savingLogs=[], huiLogs=[];
+  // Sắp xếp tháng theo thứ tự
+  const sortedKeys=Object.keys(S.months).sort();
+  sortedKeys.forEach(k=>{
+    const m=S.months[k];
+    if(!m.alloc)return;
+    if(m.alloc.saving){
+      totalSaving+=m.alloc.saving;
+      savingLogs.push({date:k.replace('__','/'),diff:m.alloc.saving,note:`Tiết kiệm phân bổ ${k.replace('__','/')}`,balAfter:totalSaving});
+    }
+    if(m.alloc.hui){
+      const huiIn=m.alloc.hui*(huiCfg.in/huiCfg.out);
+      totalHui+=huiIn;
+      huiLogs.push({date:k.replace('__','/'),diff:huiIn,note:`Hụi phân bổ ${k.replace('__','/')}`,balAfter:totalHui});
+    }
+  });
+  let sa=S.assets.find(a=>a.type==='saving');
+  if(sa){sa.balance=totalSaving;sa.logs=[...savingLogs].reverse();}
+  let ha=S.assets.find(a=>a.type==='hui');
+  if(ha){ha.balance=totalHui;ha.logs=[...huiLogs].reverse();}
+}
+
 function saveAlloc(){
   const key=curKey();const md=getMonthData(key);const inc=incomeForKey(key);
   const hui=getMV('af_hui'), saving=getMV('af_saving'), chi=getMV('af_chi');
   const tot=hui+saving+chi;
   if(inc>0&&tot>inc){if(!confirm(`Tổng phân bổ (${fmt(tot)}) vượt lương (${fmt(inc)}). Vẫn lưu?`))return;}
-  const oldSaving=md.alloc.saving||0;
-  const oldHui=md.alloc.hui||0;
   md.alloc.hui=hui; md.alloc.saving=saving; md.alloc.chi=chi;
-  // Cộng tiết kiệm vào tài sản
-  const savingDiff=saving-oldSaving;
-  if(savingDiff!==0){
-    let sa=S.assets.find(a=>a.type==='saving');
-    if(!sa){sa={id:'a_saving',name:'Tiết kiệm hàng tháng',type:'saving',balance:0,logs:[]};S.assets.push(sa);}
-    if(!sa.logs)sa.logs=[];
-    sa.balance+=savingDiff;
-    sa.logs.unshift({date:today(),diff:savingDiff,note:`Tiết kiệm phân bổ ${key}`,balAfter:sa.balance});
-  }
-  // Cộng hụi vào tài sản hụi
-  const huiDiff=hui-oldHui;
-  if(huiDiff!==0){
-    let ha=S.assets.find(a=>a.type==='hui');
-    if(ha){
-      ha.balance+=HUI_MONTHLY_IN*(huiDiff/HUI_MONTHLY_OUT);
-      if(!ha.logs)ha.logs=[];
-      ha.logs.unshift({date:today(),diff:HUI_MONTHLY_IN*(huiDiff/HUI_MONTHLY_OUT),note:`Hụi phân bổ ${key}`,balAfter:ha.balance});
-    }
-  }
-  save();closeModal('allocate');renderMonth();
+  // Rebuild toàn bộ tài sản từ tất cả tháng — đảm bảo luôn đúng dù reset hay sửa
+  rebuildAssets();
+  save();closeModal('allocate');renderMonth();renderAssets();
   toast('Đã lưu phân bổ ✓','info');
 }
 
