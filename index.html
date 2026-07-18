@@ -858,7 +858,15 @@ const getRawNum=id=>{const e=document.getElementById(id);if(!e)return 0;const v=
 function fmtMI(el){const r=el.value.replace(/\D/g,'');el.value=r?parseInt(r,10).toLocaleString('vi-VN'):'';}
 function initMI(){document.querySelectorAll('.mi').forEach(el=>{if(el._mi)return;el._mi=true;el.addEventListener('input',()=>fmtMI(el));el.addEventListener('focus',()=>{el.value=el.value.replace(/\D/g,'');});el.addEventListener('blur',()=>fmtMI(el));});}
 function toast(msg,type='ok'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast t${type} show`;setTimeout(()=>t.classList.remove('show'),2800);}
-function getMonthData(key){if(!S.months[key])S.months[key]={alloc:{chi:0,hui:HUI_MONTHLY_OUT,saving:0,extra:[]},spent:[],closed:false,remain:0,carryOver:0,allocApplied:{}};return S.months[key];}
+function getMonthData(key){
+  if(!S.months[key]){
+    const parts=key.replace('__','/').split('/');
+    const m=parseInt(parts[0])-1,y=parseInt(parts[1]);
+    const h=huiActiveInMonth(m,y)?getHuiConfig().out:0;
+    S.months[key]={alloc:{chi:0,hui:h,saving:0,extra:[]},spent:[],closed:false,remain:0,carryOver:0,allocApplied:{}};
+  }
+  return S.months[key];
+}
 function allocTotal(a){return(a.chi||0)+(a.hui||0)+(a.saving||0);}
 
 // ── NAV ──
