@@ -1638,7 +1638,9 @@ function saveAsset(){
     if(assetAdj===0)nb=oldBal+amt;else if(assetAdj===1)nb=oldBal-amt;else nb=amt;
     S.assets[i].balance=nb;
     if(!S.assets[i].logs)S.assets[i].logs=[];
-    S.assets[i].logs.unshift({date,diff:nb-oldBal,note,balAfter:nb});
+    const logEntry={date,diff:nb-oldBal,note,balAfter:nb};
+    if(isG2&&newChis)logEntry.goldChisDiff=newChis;
+    S.assets[i].logs.unshift(logEntry);
     if(isG2&&newChis!==undefined)S.assets[i].goldChis=(parseInt(S.assets[i].goldChis)||0)+newChis;
   }
   save();closeModal('editAsset');
@@ -1709,19 +1711,20 @@ function doTransferAsset(){
   const taDate=document.getElementById('taDate')?.value||today();
   const toSel=document.getElementById('taToSel');
   const toVal2=toSel?.options[toSel?.selectedIndex]?.value||'';
-  if(toVal2.startsWith('asset_')){
-    const toIdxCheck=parseInt(toVal2.replace('asset_',''));
-    if(!isNaN(toIdxCheck)&&S.assets[toIdxCheck]&&isGoldAsset(S.assets[toIdxCheck])){
-      const chis=parseInt(document.getElementById('taGoldChis')?.value)||0;
-      S.assets[toIdxCheck].goldChis=(S.assets[toIdxCheck].goldChis||0)+chis;
-    }
-  }
   fromAsset.logs.unshift({date:taDate,diff:-amt,note:`→ ${note}`,balAfter:fromAsset.balance});
   if(toVal.startsWith('asset_')){
     const toIdx=parseInt(toVal.replace('asset_',''));
-    S.assets[toIdx].balance+=amt;
-    if(!S.assets[toIdx].logs)S.assets[toIdx].logs=[];
-    S.assets[toIdx].logs.unshift({date:taDate,diff:amt,note:`← từ ${fromAsset.name}: ${note}`,balAfter:S.assets[toIdx].balance});
+    if(!isNaN(toIdx)&&S.assets[toIdx]){
+      S.assets[toIdx].balance+=amt;
+      if(!S.assets[toIdx].logs)S.assets[toIdx].logs=[];
+      const toLog={date:taDate,diff:amt,note:`← từ ${fromAsset.name}: ${note}`,balAfter:S.assets[toIdx].balance};
+      if(isGoldAsset(S.assets[toIdx])){
+        const chis=parseInt(document.getElementById('taGoldChis')?.value)||0;
+        S.assets[toIdx].goldChis=(parseInt(S.assets[toIdx].goldChis)||0)+chis;
+        if(chis>0)toLog.goldChisDiff=chis;
+      }
+      S.assets[toIdx].logs.unshift(toLog);
+    }
   }
   save();closeModal('transferAsset');renderAssets();
   toast(`Đã chuyển ${fmt(amt)} ✓`,'info');
@@ -1730,9 +1733,13 @@ function delAssetLog(assetIdx,logIdx){
   if(!confirm('Xóa dòng này?'))return;
   const a=S.assets[assetIdx];
   const log=a.logs[logIdx];
-  a.balance-=log.diff; // hoàn lại số tiền
+  a.balance-=log.diff;
+  // Nếu là tài sản vàng và log có goldChisDiff thì trừ lại số chỉ
+  if(isGoldAsset(a)&&log.goldChisDiff){
+    a.goldChis=Math.max(0,(parseInt(a.goldChis)||0)-log.goldChisDiff);
+  }
   a.logs.splice(logIdx,1);
-  save();openAssetLog(assetIdx); // refresh modal
+  save();openAssetLog(assetIdx);
   renderAssets();
 }
 function editAssetLog(assetIdx,logIdx){
