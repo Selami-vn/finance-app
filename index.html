@@ -1659,6 +1659,232 @@ function seedGifts(){
 
 // ── ASSET EDIT TOGGLE ──
 let assetEditMode=false;
+// ══ ASSET FUNCTIONS ══
+function setAA(n){assetAdj=n;['aa0','aa1','aa2'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.classList.toggle('active',i===n);});}
+function openAssetLog(i){
+  const a=S.assets[i];
+  document.getElementById('assetLogTitle').textContent=a.name+' · '+fmt(a.balance);
+  document.getElementById('assetLogAssetIdx').value=i;
+  const logs=a.logs||[];
+  document.getElementById('assetLogList').innerHTML=logs.length===0?'<div class="empty"><div class="ei">📋</div>Chưa có lịch sử</div>':logs.map((l,li)=>`
+    <div class="txi" style="align-items:flex-start;gap:8px">
+      <div class="txic" style="background:${l.diff>=0?'var(--green-bg)':'var(--red-bg)'};margin-top:2px">${l.diff>=0?'⬆️':'⬇️'}</div>
+      <div style="flex:1"><div class="txn">${l.note||''}</div>
+        <div class="txd">${fmtD(l.date)} · Sau: ${fmt(l.balAfter||0)}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <div style="font-size:13px;font-weight:600;color:${l.diff>=0?'var(--green)':'var(--red)'}">${l.diff>=0?'+':''}${fmt(l.diff)}</div>
+        ${assetEditMode?`<div style="display:flex;gap:4px">
+          <button onclick="openEditAssetLog(${i},${li})" style="background:var(--card);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer">Sửa</button>
+          <button onclick="delAssetLog(${i},${li})" style="background:var(--red-bg);border:1px solid rgba(245,101,101,0.3);color:var(--red);border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer">Xóa</button>
+        </div>`:''}
+      </div>
+    </div>`).join('');
+  openModal('assetLog');
+}
+function delAssetLog(ai,li){
+  if(!confirm('Xóa dòng này?'))return;
+  const a=S.assets[ai];const l=a.logs[li];
+  a.balance-=l.diff;
+  if(isGoldAsset(a)&&l.goldChisDiff)a.goldChis=Math.max(0,(parseInt(a.goldChis)||0)-l.goldChisDiff);
+  a.logs.splice(li,1);
+  save();openAssetLog(ai);renderAssets();
+}
+function editAssetLog(ai,li){closeModal('assetLog');openEditAssetLog(ai,li);}
+function openEditAssetLog(ai,li){
+  const a=S.assets[ai];const l=a.logs[li];
+  document.getElementById('editAssetIdx').value=ai;
+  document.getElementById('editAssetLogIdx').value=li;
+  document.getElementById('editAssetTitle').textContent='Sửa dòng: '+a.name;
+  document.getElementById('editAssetAmt').value=Math.abs(l.diff).toLocaleString('vi-VN');
+  document.getElementById('editAssetNote').value=l.note||'';
+  document.getElementById('editAssetDate').value=l.date||today();
+  document.getElementById('editAssetAdj').style.display='none';
+  const gr=document.getElementById('editAssetGoldRow');
+  if(gr)gr.style.display=isGoldAsset(a)?'':'none';
+  assetAdj=l.diff>=0?0:1;
+  openModal('editAsset');
+}
+function openEditAsset(i){
+  const a=S.assets[i];
+  document.getElementById('editAssetIdx').value=i;
+  document.getElementById('editAssetLogIdx').value=-1;
+  document.getElementById('editAssetTitle').textContent='Cập nhật: '+a.name;
+  document.getElementById('editAssetAmt').value='';
+  document.getElementById('editAssetNote').value='';
+  document.getElementById('editAssetDate').value=today();
+  document.getElementById('editAssetAdj').style.display='';
+  const gr=document.getElementById('editAssetGoldRow');
+  if(gr){gr.style.display=isGoldAsset(a)?'':'none';if(isGoldAsset(a))document.getElementById('editAssetChis').value='';}
+  assetAdj=0;setAA(0);openModal('editAsset');
+}
+function isGoldAsset(a){return a.name?.toLowerCase().includes('vàng');}
+function saveAsset(){
+  const i=parseInt(document.getElementById('editAssetIdx').value);
+  const li=parseInt(document.getElementById('editAssetLogIdx').value);
+  const amt=getMV('editAssetAmt');
+  const note=document.getElementById('editAssetNote').value.trim()||'Cập nhật';
+  const date=document.getElementById('editAssetDate').value||today();
+  const isG=isGoldAsset(S.assets[i]);
+  const newChis=isG?(parseInt(document.getElementById('editAssetChis')?.value)||0):undefined;
+  if(li>=0){
+    const l=S.assets[i].logs[li];const oldDiff=l.diff;
+    const newDiff=assetAdj===1?-amt:amt;
+    S.assets[i].balance=S.assets[i].balance-oldDiff+newDiff;
+    l.diff=newDiff;l.note=note;l.date=date;l.balAfter=S.assets[i].balance;
+    if(isG&&newChis!==undefined)S.assets[i].goldChis=(parseInt(S.assets[i].goldChis)||0)+newChis;
+  } else {
+    const oldBal=S.assets[i].balance;let nb=oldBal;
+    if(assetAdj===0)nb=oldBal+amt;else if(assetAdj===1)nb=oldBal-amt;else nb=amt;
+    S.assets[i].balance=nb;
+    if(!S.assets[i].logs)S.assets[i].logs=[];
+    const entry={date,diff:nb-oldBal,note,balAfter:nb};
+    if(isG&&newChis)entry.goldChisDiff=newChis;
+    S.assets[i].logs.unshift(entry);
+    if(isG&&newChis!==undefined)S.assets[i].goldChis=(parseInt(S.assets[i].goldChis)||0)+newChis;
+  }
+  save();closeModal('editAsset');
+  const lai=parseInt(document.getElementById('assetLogAssetIdx')?.value||-1);
+  if(lai===i)openAssetLog(i);
+  renderAssets();toast('Đã cập nhật ✓');
+}
+function delAsset(i){if(confirm('Xóa "'+S.assets[i].name+'"?')){S.assets.splice(i,1);save();renderAssets();}}
+function openTransferAsset(i){
+  const a=S.assets[i];
+  document.getElementById('taFromIdx').value=i;
+  document.getElementById('taDate').value=today();
+  document.getElementById('taGoldChis').value='';
+  document.getElementById('taGoldRow').style.display='none';
+  document.getElementById('transferAssetTitle').textContent='Chuyển từ: '+a.name;
+  document.getElementById('taFromInfo').textContent=`Số dư hiện tại: ${fmt(a.balance)}`;
+  document.getElementById('taAmt').value='';document.getElementById('taNote').value='';
+  const others=S.assets.filter((_,j)=>j!==i).map((x,j)=>{const ri=S.assets.indexOf(x);return`<option value="asset_${ri}">${AI[x.type]||'📦'} ${x.name}</option>`;});
+  const toSel=document.getElementById('taToSel');
+  toSel.innerHTML=`<option value="external">👤 Ra ngoài</option>${others.join('')}`;
+  const goldIdx=S.assets.findIndex((x,j)=>j!==i&&isGoldAsset(x));
+  if(goldIdx>=0){for(let o of toSel.options){if(o.value===`asset_${goldIdx}`){o.selected=true;break;}}}
+  setTimeout(toggleTaGoldRow,50);
+  openModal('transferAsset');
+}
+function toggleTaGoldRow(){
+  const sel=document.getElementById('taToSel');const row=document.getElementById('taGoldRow');
+  if(!sel||!row)return;
+  const val=sel.options[sel.selectedIndex]?.value||'';
+  let isGold=false;
+  if(val.startsWith('asset_')){const idx=parseInt(val.replace('asset_',''));isGold=!isNaN(idx)&&S.assets[idx]&&isGoldAsset(S.assets[idx]);}
+  row.style.display=isGold?'':'none';
+}
+function doTransferAsset(){
+  const fromIdx=parseInt(document.getElementById('taFromIdx').value);
+  const toSel=document.getElementById('taToSel');
+  const toVal=toSel.options[toSel.selectedIndex]?.value||'';
+  const amt=getMV('taAmt');const note=document.getElementById('taNote').value.trim()||'Chuyển tiền';
+  if(amt<=0)return toast('Nhập số tiền','err');
+  const fromAsset=S.assets[fromIdx];
+  if(amt>fromAsset.balance)return toast('Số tiền vượt quá số dư','err');
+  fromAsset.balance-=amt;
+  if(!fromAsset.logs)fromAsset.logs=[];
+  const taDate=document.getElementById('taDate')?.value||today();
+  fromAsset.logs.unshift({date:taDate,diff:-amt,note:`→ ${note}`,balAfter:fromAsset.balance});
+  if(toVal.startsWith('asset_')){
+    const toIdx=parseInt(toVal.replace('asset_',''));
+    if(!isNaN(toIdx)&&S.assets[toIdx]){
+      S.assets[toIdx].balance+=amt;
+      if(!S.assets[toIdx].logs)S.assets[toIdx].logs=[];
+      const toLog={date:taDate,diff:amt,note:`← từ ${fromAsset.name}: ${note}`,balAfter:S.assets[toIdx].balance};
+      if(isGoldAsset(S.assets[toIdx])){
+        const chis=parseInt(document.getElementById('taGoldChis')?.value)||0;
+        S.assets[toIdx].goldChis=(parseInt(S.assets[toIdx].goldChis)||0)+chis;
+        if(chis>0)toLog.goldChisDiff=chis;
+      }
+      S.assets[toIdx].logs.unshift(toLog);
+    }
+  }
+  save();closeModal('transferAsset');renderAssets();
+  toast(`Đã chuyển ${fmt(amt)} ✓`,'info');
+}
+// ══ DEBT FUNCTIONS ══
+const _debtState={};
+function renderDebt(){
+  const allOpen=S.debts.filter(d=>!d.closed);
+  document.getElementById('debtTotal').textContent=fmt(allOpen.reduce((s,d)=>s+(d.amount-d.paid),0));
+  const el=document.getElementById('debtList');
+  const byPerson={};
+  S.debts.forEach((d,idx)=>{
+    const k=d.name.toLowerCase().trim();
+    if(!byPerson[k])byPerson[k]={name:d.name,debts:[],totalOwed:0};
+    byPerson[k].debts.push({...d,_idx:idx});
+    if(!d.closed)byPerson[k].totalOwed+=(d.amount-d.paid);
+  });
+  const showHistory=_debtState['__showHistory']===true;
+  const activePeople=Object.values(byPerson).filter(p=>p.totalOwed>0).sort((a,b)=>b.totalOwed-a.totalOwed);
+  const closedPeople=Object.values(byPerson).filter(p=>p.totalOwed<=0&&p.debts.length>0);
+  const histBtn=document.getElementById('debtHistoryBtn');
+  if(histBtn){histBtn.style.opacity=showHistory?1:0.4;}
+  if(!activePeople.length&&!showHistory){el.innerHTML='<div class="empty"><div class="ei">🤝</div>Không có khoản nợ nào</div>';}
+  else{
+    el.innerHTML=activePeople.map(p=>renderPersonCard(p,false)).join('');
+  }
+  const dh=document.getElementById('debtHistory');
+  if(dh){
+    if(showHistory&&closedPeople.length){
+      dh.innerHTML='<div class="sec" style="margin:16px 0 8px">Nợ đã thu xong</div>'+closedPeople.map(p=>renderPersonCard(p,true)).join('');
+    } else dh.innerHTML='';
+  }
+}
+function renderPersonCard(p,isClosed){
+  const pk=p.name.toLowerCase().trim();
+  const expanded=_debtState[pk+'_open']===true;
+  const editMode=_debtState[pk+'_edit']===true;
+  const deductMode=_debtState[pk+'_deduct']===true;
+  const events=[];
+  p.debts.forEach(d=>{
+    events.push({date:d.date,type:'lend',amt:d.amount,note:d.note||'',_idx:d._idx});
+    (d.payments||[]).forEach((pay,pi)=>events.push({date:pay.date,type:'pay',amt:pay.amount,note:pay.note||'',_idx:d._idx,_pi:pi,allocTo:pay.allocTo}));
+  });
+  events.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  let body='';
+  if(deductMode){
+    const openD=p.debts.filter(d=>!d.closed).sort((a,b)=>new Date(a.date)-new Date(b.date));
+    body=openD.map(d=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+      <div><div style="font-size:12px;font-weight:500">${fmtD(d.date)}${d.note?' · '+d.note:''}</div>
+      <div style="font-size:11px;color:var(--text3)">Gốc: ${fmt(d.amount)}${d.paid>0?' · Đã trả: '+fmt(d.paid):''}</div></div>
+      <div style="font-size:14px;font-weight:700;color:var(--amber)">${fmt(d.amount-d.paid)}</div>
+    </div>`).join('')+`<div style="font-size:11px;color:var(--text3);margin-top:8px;padding:6px;background:rgba(255,255,255,0.03);border-radius:6px">💡 Thu nợ sẽ trừ vào khoản cũ nhất trước</div>`;
+  } else {
+    body=events.map(ev=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+      <div style="font-size:15px">${ev.type==='lend'?'➕':'💵'}</div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;color:${ev.type==='lend'?'var(--amber)':'var(--green)'}">${ev.type==='lend'?'+':'-'}${fmt(ev.amt)}</div>
+        <div style="font-size:11px;color:var(--text3)">${fmtD(ev.date)}${ev.note?' · '+ev.note:''}</div>
+      </div>
+      ${editMode?`<div style="display:flex;gap:4px">
+        <button onclick="openEditPayment(${ev._idx},${ev.type==='lend'?-1:ev._pi});event.stopPropagation()" style="background:var(--card);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">Sửa</button>
+        <button onclick="${ev.type==='lend'?`delDebt(${ev._idx})`:`delPayment(${ev._idx},${ev._pi})`};event.stopPropagation()" style="background:var(--red-bg);border:1px solid rgba(245,101,101,0.3);color:var(--red);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">Xóa</button>
+      </div>`:''}
+    </div>`).join('');
+  }
+  return `<div class="debt-card">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px;cursor:pointer;flex:1" onclick="_debtState['${pk}_open']=!_debtState['${pk}_open'];renderDebt()">
+        <div style="font-size:20px">👤</div>
+        <div><div style="font-size:14px;font-weight:600">${p.name}</div>
+          <div style="font-size:11px;color:var(--text3)">${isClosed?'đã thu xong':'còn nợ'}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="font-size:17px;font-weight:700;color:${isClosed?'var(--green)':'var(--amber)'};cursor:pointer" onclick="_debtState['${pk}_open']=!_debtState['${pk}_open'];renderDebt()">${isClosed?'✅':fmt(p.totalOwed)}</div>
+        <button onclick="_debtState['${pk}_edit']=!_debtState['${pk}_edit'];if(_debtState['${pk}_edit'])_debtState['${pk}_open']=true;renderDebt();event.stopPropagation()" style="background:none;border:none;font-size:14px;cursor:pointer;padding:3px;opacity:${editMode?1:0.4}">✏️</button>
+        ${!isClosed?`<button onclick="_debtState['${pk}_deduct']=!_debtState['${pk}_deduct'];if(_debtState['${pk}_deduct'])_debtState['${pk}_open']=true;renderDebt();event.stopPropagation()" style="background:none;border:none;font-size:14px;cursor:pointer;padding:3px;opacity:${deductMode?1:0.4}">🔄</button>`:''}
+        ${!isClosed?`<button onclick="openPayDebt(${p.debts[0]._idx});event.stopPropagation()" style="background:var(--accent);border:none;color:#000;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;font-weight:600">💵 Thu</button>`:''}
+      </div>
+    </div>
+    ${expanded?`<div style="border-top:1px solid var(--border);margin-top:10px;padding-top:8px">
+      ${body}
+      ${!isClosed?`<button onclick="openAddDebtForPerson('${p.name}');event.stopPropagation()" style="width:100%;text-align:center;margin-top:8px;background:var(--card);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:7px;font-size:12px;cursor:pointer">+ Cho ${p.name} mượn thêm</button>`:''}
+    </div>`:''}
+  </div>`;
+}
 function toggleAssetEdit(){
   assetEditMode=!assetEditMode;
   const btn=document.getElementById('assetEditBtn');
