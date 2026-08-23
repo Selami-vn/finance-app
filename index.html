@@ -345,7 +345,7 @@ select.if option{background:#1e1e28;}
     </div>
     <button class="btn bp" onclick="addIncome()">+ Ghi nhận</button>
   </div>
-  <div class="sec">Tổng thu nhập theo tháng</div>
+  <div class="sec" style="display:flex;justify-content:space-between;align-items:center"><span>Tổng thu nhập theo tháng</span><button onclick="toggleSalEditMode()" id="salEditBtn" style="background:none;border:1px solid var(--border);color:var(--text3);border-radius:6px;padding:2px 9px;font-size:11px;cursor:pointer">✏️ Sửa</button></div>
   <div id="salaryHistory"></div>
 </div>
 
@@ -1282,7 +1282,6 @@ function renderSalary(){
   const byMonth={};
   inc.forEach((item,itemIdx)=>{
     const mk=item.salaryMonth||'';
-    // Lọc bỏ entry không có salaryMonth hợp lệ (NaN)
     if(!mk||!mk.includes('/'))return;
     const [mm,yy]=mk.split('/').map(Number);
     if(isNaN(mm)||isNaN(yy))return;
@@ -1297,6 +1296,10 @@ function renderSalary(){
   const el=document.getElementById('salaryHistory');
   if(!el)return;
   if(months.length===0){el.innerHTML='<div class="empty"><div class="ei">💰</div>Chưa có thu nhập</div>';return;}
+
+  // Cập nhật màu nút sửa
+  const salBtn=document.getElementById('salEditBtn');
+  if(salBtn)salBtn.style.color=salEditMode?'var(--accent)':'var(--text3)';
 
   const byYear={};
   months.forEach(m=>{
@@ -1318,19 +1321,13 @@ function renderSalary(){
   };
 
   let html='';
-  // Nút sửa chỉ 1 lần, ở trên cùng
-  html+=`<div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-    <button onclick="toggleSalEditMode()" id="salEditBtn" style="background:none;border:1px solid var(--border);color:${salEditMode?'var(--accent)':'var(--text3)'};border-radius:6px;padding:2px 9px;font-size:11px;cursor:pointer">✏️ Sửa</button>
-  </div>`;
-
   years.forEach(y=>{
     html+=`<div style="font-size:12px;font-weight:700;letter-spacing:0.8px;color:var(--text3);margin:10px 0 8px">${y}</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px">`;
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;margin-bottom:4px">`;
     byYear[y].forEach(m=>{
       const items=byMonth[m];
       const total=items.reduce((s,i)=>s+i.amount,0);
       const mLabel='Tháng '+parseInt(m.split('/')[0]);
-      // items: border-bottom trên TẤT CẢ — dòng Tổng KHÔNG có border-top → 1 vạch duy nhất
       html+=`<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:13px 14px">
         <div style="font-size:15px;font-weight:700;margin-bottom:10px">${mLabel}</div>
         ${items.map(i=>`<div style="display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">
@@ -1356,14 +1353,15 @@ function renderSalary(){
     html+=`</div>`;
   });
 
-  html+=`<div style="background:linear-gradient(135deg,rgba(250,189,90,0.07),rgba(250,189,90,0.02));border:1px solid rgba(250,189,90,0.2);border-radius:var(--r);padding:16px 20px;margin-top:14px;display:flex;justify-content:space-between;align-items:center">
-    <div style="font-size:12px;font-weight:600;letter-spacing:0.7px;color:rgba(250,189,90,0.6)">TỔNG THU NHẬP ${curY}</div>
-    <div style="font-size:26px;font-weight:700;color:#FABE5A">${fmt(curYearTotal)} đ</div>
+  html+=`<div style="background:linear-gradient(135deg,rgba(250,189,90,0.07),rgba(250,189,90,0.02));border:1px solid rgba(250,189,90,0.2);border-radius:var(--r);padding:14px 16px;margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:12px">
+    <div style="font-size:11px;font-weight:600;letter-spacing:0.7px;color:rgba(250,189,90,0.6);white-space:nowrap">TỔNG THU NHẬP ${curY}</div>
+    <div style="font-size:20px;font-weight:700;color:#FABE5A;white-space:nowrap">${fmt(curYearTotal)} đ</div>
   </div>`;
 
   el.innerHTML=html;
   renderYear();
 }
+
 function renderAssets(){
   const el=document.getElementById('assetList');if(!el)return;
   const isGoldAsset=a=>a.name?.toLowerCase().includes('vàng');
