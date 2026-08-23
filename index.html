@@ -910,25 +910,24 @@ function changeMonth(d){
 
 // ── NĂM NAY ──
 function renderYear(){
+  const curY=new Date().getFullYear();
   const totalInc=S.incomes.reduce((s,i)=>s+i.amount,0);
-  // Tổng tiết kiệm = tất cả tháng cộng lại (hụi + saving)
-  let totalSaving=0,totalHui=0,totalChi=0,totalSpend=0;
+  let totalSaving=0,totalHui=0,totalChi=0;
   Object.values(S.months).forEach(md=>{
     totalSaving+=(md.alloc?.saving||0);
     totalHui+=(md.alloc?.hui||0);
     totalChi+=(md.alloc?.chi||0);
-    totalSpend+=(md.spent||[]).reduce((s,x)=>s+x.amount,0);
   });
   const totalTK=totalSaving+totalHui;
   document.getElementById('yearIncome').textContent=fmt(totalInc);
   document.getElementById('yearSaving').textContent=fmt(totalTK);
   document.getElementById('yearSpend').textContent=fmt(totalChi);
-  // Progress bar: tiết kiệm vs chi tiêu
+
   const pctS=totalInc>0?Math.round(totalTK/totalInc*100):0;
   const pctC=totalInc>0?Math.round(totalChi/totalInc*100):0;
   const bar=document.getElementById('yearBar');
   if(bar)bar.innerHTML=`
-    <div style="display:flex;border-radius:8px;overflow:hidden;height:12px;margin:8px 0">
+    <div style="display:flex;border-radius:8px;overflow:hidden;height:10px;margin:8px 0">
       <div style="width:${pctS}%;background:var(--blue);transition:width 0.3s"></div>
       <div style="width:${pctC}%;background:var(--amber);transition:width 0.3s"></div>
     </div>
@@ -936,20 +935,76 @@ function renderYear(){
       <span style="color:var(--blue)">● Tiết kiệm ${pctS}%</span>
       <span style="color:var(--amber)">● Chi tiêu ${pctC}%</span>
     </div>`;
-  // Ghi chú chi tiêu lớn trong năm
-  const allSpends=[];
-  Object.entries(S.months).forEach(([k,md])=>{
-    (md.spent||[]).forEach(s=>allSpends.push({...s,monthKey:k}));
-  });
-  allSpends.sort((a,b)=>b.amount-a.amount);
-  const topEl=document.getElementById('yearTopSpend');
-  if(topEl)topEl.innerHTML=allSpends.slice(0,5).map(s=>`
-    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
-      <span style="color:var(--text2)">${s.desc||'Chi tiêu'} <span style="color:var(--text3);font-size:10px">${s.monthKey}</span></span>
-      <span style="color:var(--red);font-weight:600">-${fmt(s.amount)}</span>
-    </div>`).join('') || '<div class="empty"><div class="ei">📊</div>Chưa có dữ liệu</div>';
-}
 
+  // Thu nhập từng tháng năm hiện tại
+  const monthData=[];
+  for(let m=1;m<=12;m++){
+    const mk=String(m).padStart(2,'0')+'/'+curY;
+    const val=S.incomes.filter(i=>i.salaryMonth===mk).reduce((s,i)=>s+i.amount,0);
+    monthData.push({m,mk,val});
+  }
+  const activeMths=monthData.filter(d=>d.val>0);
+  const avg=activeMths.length?Math.round(activeMths.reduce((s,d)=>s+d.val,0)/activeMths.length):0;
+  const fmtTr=v=>v>=1000000?(v/1000000).toFixed(1).replace(/\.0$/,'')+' tr':fmt(v);
+
+  // Biểu đồ SVG gọn
+  const grid=document.getElementById('yearMonthGrid');
+  if(grid){
+    if(!activeMths.length){grid.innerHTML='';return;}
+    const W=360,H=90,PL=8,PR=32,PT=10,PB=18;
+    const iW=W-PL-PR,iH=H-PT-PB;
+    const maxV=Math.max(...monthData.map(d=>d.val),1);
+    const pts=monthData.map((d,i)=>({
+      x:PL+i*(iW/11),
+      y:PT+iH-(d.val/maxV)*iH,
+      d
+    }));
+    const pathD=pts.map((p,i)=>i===0?`M${p.x.toFixed(1)},${p.y.toFixed(1)}`:`L${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+    const areaD=pathD+` L${pts[11].x.toFixed(1)},${(PT+iH).toFixed(1)} L${pts[0].x.toFixed(1)},${(PT+iH).toFixed(1)} Z`;
+    const avgY=PT+iH-(avg/maxV)*iH;
+
+    const svgContent=pts.map((p,i)=>{
+      const isActive=p.d.val>0;
+      const label=fmtTr(p.d.val);
+      const above=p.y>PT+iH*0.7; // label lên trên nếu điểm thấp
+      return `${isActive?`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" fill="#4ADE80" stroke="var(--bg)" stroke-width="1"/>
+        <text x="${p.x.toFixed(1)}" y="${above?(p.y-5).toFixed(1):(p.y+10).toFixed(1)}" text-anchor="middle" font-size="7.5" fill="#4ADE80" font-weight="600">${label}</text>`:''}
+        <text x="${p.x.toFixed(1)}" y="${(PT+iH+12).toFixed(1)}" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.35)">T${p.d.m}</text>`;
+    }).join('');
+
+    grid.innerHTML=`<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 12px 8px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+        <div style="font-size:12px;color:var(--text3);font-weight:600">THU NHẬP ${curY}</div>
+        <div style="font-size:11px;color:rgba(250,189,90,0.9)">TB <span style="font-size:15px;font-weight:700">${fmtTr(avg)}</span>/tháng</div>
+      </div>
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block;overflow:visible" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="ig" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#4ADE80" stop-opacity="0.18"/>
+            <stop offset="100%" stop-color="#4ADE80" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <line x1="${PL}" y1="${avgY.toFixed(1)}" x2="${(W-PR).toFixed(1)}" y2="${avgY.toFixed(1)}"
+          stroke="#FABE5A" stroke-width="1" stroke-dasharray="3,3" opacity="0.55"/>
+        <text x="${(W-PR+3).toFixed(1)}" y="${(avgY+3).toFixed(1)}" font-size="7.5" fill="#FABE5A" opacity="0.8" font-weight="600">TB</text>
+        <path d="${areaD}" fill="url(#ig)"/>
+        <path d="${pathD}" fill="none" stroke="#4ADE80" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+        ${svgContent}
+      </svg>
+    </div>`;
+  }
+
+  // Banner dưới: hiện TB thay tổng
+  const totEl=document.getElementById('yearTotal');
+  if(totEl){
+    totEl.style.display=avg>0?'flex':'none';
+    if(avg>0){
+      document.getElementById('yearLabelBot').textContent='trung bình/tháng';
+      document.getElementById('yearTotalBot').textContent=fmtTr(avg);
+      document.getElementById('yearSummaryBot').textContent=`Dựa trên ${activeMths.length} tháng có thu nhập`;
+    }
+  }
+}
 // ── HÀNG THÁNG ──
 let spendEditMode=false;
 function toggleSpendEdit(){
@@ -1323,7 +1378,7 @@ function renderSalary(){
   let html='';
   years.forEach(y=>{
     html+=`<div style="font-size:12px;font-weight:700;letter-spacing:0.8px;color:var(--text3);margin:10px 0 8px">${y}</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;margin-bottom:4px">`;
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:4px">`;
     byYear[y].forEach(m=>{
       const items=byMonth[m];
       const total=items.reduce((s,i)=>s+i.amount,0);
