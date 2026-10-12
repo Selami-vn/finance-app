@@ -773,6 +773,14 @@ select.if option{background:#1e1e28;}
 </div>
 
 <div class="toast" id="toast"></div>
+<button id="undoBtn" onclick="undoAction()" title="Hoàn tác (Cmd+Z)" style="
+  position:fixed;bottom:24px;right:20px;z-index:9998;
+  background:rgba(30,30,40,0.92);border:1px solid rgba(255,255,255,0.15);
+  color:rgba(255,255,255,0.7);border-radius:10px;padding:8px 13px;
+  font-size:12px;cursor:pointer;display:none;backdrop-filter:blur(10px);
+  box-shadow:0 4px 16px rgba(0,0,0,0.4);transition:opacity 0.2s;
+  display:flex;align-items:center;gap:6px;
+">↩ Hoàn tác</button>
 
 <script>
 const MONTHS=['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
@@ -824,7 +832,38 @@ function restoreFromFirebase(obj) {
   }
   return out;
 }
+// ── UNDO ──
+const _undoStack=[];
+const MAX_UNDO=20;
+function pushUndo(){
+  _undoStack.push(JSON.stringify(S));
+  if(_undoStack.length>MAX_UNDO)_undoStack.shift();
+  const btn=document.getElementById('undoBtn');
+  if(btn)btn.style.display='flex';
+}
+function undoAction(){
+  if(!_undoStack.length)return toast('Không còn gì để hoàn tác','info');
+  const prev=_undoStack.pop();
+  Object.assign(S,JSON.parse(prev));
+  save();
+  // Re-render tab hiện tại
+  const activePage=document.querySelector('.page.active');
+  if(activePage){
+    const id=activePage.id.replace('page-','');
+    ({year:renderYear,month:renderMonth,salary:renderSalary,assets:renderAssets,debt:renderDebt,gifts:renderGifts})[id]?.();
+  }
+  if(!_undoStack.length){const btn=document.getElementById('undoBtn');if(btn)btn.style.display='none';}
+  toast('Đã hoàn tác ✓','ok');
+}
+// Keyboard Cmd+Z / Ctrl+Z
+document.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key==='z'&&!e.shiftKey){
+    e.preventDefault();undoAction();
+  }
+});
+
 function save() {
+  pushUndo();
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(() => {
     DATA_REF.set(sanitizeForFirebase(JSON.parse(JSON.stringify(S))));
