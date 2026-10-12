@@ -866,6 +866,7 @@ document.addEventListener('keydown',e=>{
 });
 
 function save() {
+  if(!_undoing) pushUndo();
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(() => {
     DATA_REF.set(sanitizeForFirebase(JSON.parse(JSON.stringify(S))));
