@@ -853,17 +853,50 @@ function recordUndo(){
   _typedInField=false;
   updateUndoBtn();
 }
+// ── Lưu lịch sử undo vào trình duyệt để tải lại trang vẫn hoàn tác được ──
+// Chỉ khôi phục khi dữ liệu trên Firebase vẫn đúng như lúc lưu (không ai sửa ở máy khác).
+const UNDO_LS='selami_undo_v1';
+function _canonFB(o){ // giống cách Firebase trả dữ liệu về: bỏ rỗng/null, key sắp xếp
+  if(Array.isArray(o)){const a=o.map(_canonFB).filter(v=>v!==undefined);return a.length?a:undefined;}
+  if(o&&typeof o==='object'){const r={};Object.keys(o).sort().forEach(k=>{const v=_canonFB(o[k]);if(v!==undefined)r[k]=v;});return Object.keys(r).length?r:undefined;}
+  return o===null?undefined:o;
+}
+function _hashStr(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)+'_'+s.length;}
+function _dataHash(fbData){return _hashStr(JSON.stringify(_canonFB(fbData))||'');}
+function _persistUndo(fbPayload){
+  try{
+    const base=_dataHash(fbPayload);
+    let stack=_undoStack.slice();
+    while(true){
+      try{localStorage.setItem(UNDO_LS,JSON.stringify({base,stack}));return;}
+      catch(e){if(!stack.length){localStorage.removeItem(UNDO_LS);return;}stack.shift();}
+    }
+  }catch(e){}
+}
+function _loadUndo(raw){
+  try{
+    const o=JSON.parse(localStorage.getItem(UNDO_LS)||'null');
+    if(o&&Array.isArray(o.stack)&&raw&&o.base===_dataHash(raw)){
+      _undoStack.length=0;o.stack.slice(-MAX_UNDO).forEach(x=>_undoStack.push(x));
+    }else if(o){
+      localStorage.removeItem(UNDO_LS); // dữ liệu đã đổi ở nơi khác → các bước cũ không còn đúng
+      _undoStack.length=0;
+    }
+  }catch(e){}
+  updateUndoBtn();
+}
 function updateUndoBtn(){
   const b=document.getElementById('undoBtn');if(!b)return;
   const n=_undoStack.length;
   b.style.opacity=n?'1':'0.35';
-  b.title=n?('Hoàn tác (⌘Z) — còn '+n+' bước'):'Chưa có gì để hoàn tác';
+  const last=n?_undoStack[n-1].label:'';
+  b.title=n?('Hoàn tác'+(last?': '+last:'')+' (⌘Z) — còn '+n+' bước'):'Chưa có gì để hoàn tác';
 }
 function undoAction(){
   const pw=document.getElementById('pwScreen');
   if(pw&&getComputedStyle(pw).display!=='none')return;
   if(!_undoStack.length){toast('Không còn gì để hoàn tác','info');return;}
-  const {s,page}=_undoStack.pop();
+  const {s,page,label}=_undoStack.pop();
   const prev=JSON.parse(s);
   Object.keys(S).forEach(k=>delete S[k]);
   Object.assign(S,prev);
@@ -879,7 +912,7 @@ function undoAction(){
   }
   renderYear();renderMonth();renderSalary();renderAssets();renderDebt();renderGifts();initMI();
   updateUndoBtn();
-  toast('Đã hoàn tác ✓'+(_undoStack.length?' (còn '+_undoStack.length+' bước)':''),'ok');
+  toast('↩ Đã hoàn tác'+(label?': '+label:'')+(_undoStack.length?' (còn '+_undoStack.length+' bước)':''),'ok');
 }
 // Cmd+Z / Ctrl+Z — nếu đang gõ chữ trong ô nhập thì để trình duyệt hoàn tác chữ
 document.addEventListener('focusin',()=>{_typedInField=false;});
@@ -898,7 +931,9 @@ document.addEventListener('keydown',e=>{
 function _flushSave(){
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(() => {
-    DATA_REF.set(sanitizeForFirebase(JSON.parse(JSON.stringify(S))));
+    const payload=sanitizeForFirebase(JSON.parse(JSON.stringify(S)));
+    DATA_REF.set(payload);
+    _persistUndo(payload);
   }, 400);
 }
 // save(true) = lưu nhưng không tạo bước undo (vd: chỉ chuyển tháng đang xem)
@@ -934,7 +969,7 @@ function fmtCloseRemain(el){
 }
 const getRawNum=id=>{const e=document.getElementById(id);if(!e)return 0;const v=e.value.trim().replace(/\./g,'').replace(/,/g,'');if(!v)return 0;if(v.startsWith('-'))return -(parseInt(v.slice(1).replace(/\D/g,''),10)||0);return parseInt(v.replace(/\D/g,''),10)||0;};
 function fmtMI(el){const r=el.value.replace(/\D/g,'');el.value=r?parseInt(r,10).toLocaleString('vi-VN'):'';}
-function initMI(){document.querySelectorAll('.mi').forEach(el=>{if(el._mi)return;el._mi=true;el.addEventListener('input',()=>fmtMI(el));el.addEventListener('focus',()=>{const all=el.value.length>0&&el.selectionStart===0&&el.selectionEnd===el.value.length;el.value=el.value.replace(/\D/g,'');if(all)el.select();});el.addEventListener('blur',()=>fmtMI(el));});}
+function initMI(){document.querySelectorAll('.mi').forEach(el=>{if(el._mi)return;el._mi=true;el.addEventListener('input',()=>fmtMI(el));el.addEventListener('focus',()=>{el.value=el.value.replace(/\D/g,'');el._jf=true;el._typed=false;el.select();setTimeout(()=>{try{if(!el._typed&&document.activeElement===el)el.setSelectionRange(0,el.value.length);}catch(e){}},0);});el.addEventListener('mouseup',e=>{if(el._jf){e.preventDefault();el._jf=false;}});el.addEventListener('keydown',()=>{el._jf=false;el._typed=true;});el.addEventListener('beforeinput',()=>{el._typed=true;});el.addEventListener('blur',()=>fmtMI(el));});}
 function autoFillDates(){document.querySelectorAll('input[type="date"]').forEach(el=>{if(!el.value)el.value=today();});}
 function autoSalMonth(){
   const d=document.getElementById('salDate').value;
@@ -951,7 +986,7 @@ function resetSalForm(){
   document.getElementById('salType').value='salary';
   _editCtx={};
 }
-function toast(msg,type='ok'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast t${type} show`;setTimeout(()=>t.classList.remove('show'),2800);}
+function toast(msg,type='ok'){if(type!=='err'&&_undoGroup&&_undoStack.length&&!_undoStack[_undoStack.length-1].label){_undoStack[_undoStack.length-1].label=String(msg).replace(/^Đã\s*/,'').replace(/\s*✓\s*$/,'');updateUndoBtn();}const t=document.getElementById('toast');t.textContent=msg;t.className=`toast t${type} show`;setTimeout(()=>t.classList.remove('show'),2800);}
 function getMonthData(key){
   if(!S.months[key]){
     const parts=key.replace('__','/').split('/');
@@ -2552,6 +2587,7 @@ function loadAndInit(){
       save();
     }
     markSaved();
+    _loadUndo(raw);
     hideLoadingOnPw();
     document.getElementById('hdate').textContent=new Date().toLocaleDateString('vi-VN',{weekday:'short',day:'numeric',month:'numeric',year:'numeric'});
     renderYear();renderMonth();renderSalary();renderAssets();renderDebt();renderGifts();initMI();
