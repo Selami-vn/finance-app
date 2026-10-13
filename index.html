@@ -236,15 +236,6 @@ select.if option{background:#1e1e28;}
       const pr={t:performance.now(),x:e.clientX,y:e.clientY,fired:false};
       pr.timer=setTimeout(()=>{if(f.press===pr){pr.fired=true;toggleMode(f);}},LONG_PRESS);
       f.press=pr;
-    }else{
-      const now=performance.now();
-      if(lastDown&&now-lastDown.t<DBL_MS&&Math.hypot(e.clientX-lastDown.x,e.clientY-lastDown.y)<60){
-        clearTimeout(lastDown.timer);lastDown=null;toggleMode(f);return;
-      }
-      fx(f,mode==='saver'?1200:600,0.25,true); // phóng nhẹ (ngắm hoa: chậm rãi)
-      const ld={t:now,x:e.clientX,y:e.clientY,f};
-      ld.timer=setTimeout(()=>{if(lastDown===ld){lastDown=null;if(mode==='ready')showPwBox();}},DBL_MS);
-      lastDown=ld;
     }
   }
   function onUp(e,f){
@@ -254,8 +245,8 @@ select.if option{background:#1e1e28;}
     enterApp(f);
   }
   function toggleMode(f){
-    fx(f,900,0.4,true);
-    if(mode==='ready'){mode='saver';hidePwBox();buzz([15,40,15]);showHint('🌸 Ngắm hoa');}
+    if(f)fx(f,900,0.4,true);
+    if(mode==='ready'){mode='saver';hidePwBox();buzz([15,40,15]);showHint(TOUCH?'🌸 Ngắm hoa':'🌸 Ngắm hoa · nhấn Space để thoát');}
     else{mode='ready';buzz(20);showHint('Đã thoát ngắm hoa');}
   }
   function enterApp(f){ // điện thoại: bông hoa nở ra, màn hình mờ dần rồi vào app
@@ -283,18 +274,42 @@ select.if option{background:#1e1e28;}
   window._pwReset=function(){mode='ready';flowers.forEach(release);};
   window._pwState=function(){return {mode,flowers:flowers.map(f=>({x:f.x,y:f.y,vx:f.vx,vy:f.vy,sz:f.sz,held:f.held}))};};
   if(!TOUCH){
+    // Máy tính — chuột:
+    //  • Chờ mở khoá: click hoa → ô mật khẩu; double click hoa → ngắm hoa; click chỗ trống → ẩn ô mật khẩu
+    //  • Ngắm hoa: click hoa → hoa phóng nhẹ; double click BẤT KỲ ĐÂU → thoát
+    const flowerOf=t=>flowers.find(f=>f.el===t)||null;
     pw.addEventListener('pointerdown',e=>{
-      if(e.target.tagName==='IMG'&&e.target.parentNode===bg)return; // click trúng hoa: đã xử lý ở trên
-      // Click thứ 2 của double click hụt bông hoa (hoa bay đi mất) vẫn tính là double click
-      if(lastDown&&performance.now()-lastDown.t<DBL_MS&&Math.hypot(e.clientX-lastDown.x,e.clientY-lastDown.y)<60){
-        clearTimeout(lastDown.timer);const f=lastDown.f;lastDown=null;toggleMode(f);return;
+      if(busy||e.target.closest('#pwBox'))return; // bấm trong ô mật khẩu: bỏ qua
+      const now=performance.now(), f=flowerOf(e.target);
+      if(lastDown&&now-lastDown.t<DBL_MS&&Math.hypot(e.clientX-lastDown.x,e.clientY-lastDown.y)<60){
+        clearTimeout(lastDown.timer);const f0=f||lastDown.f;lastDown=null;
+        if(mode==='saver'||f0)toggleMode(f0);
+        return;
       }
-      // Bấm ra chỗ trống → ẩn ô mật khẩu, quay lại chỉ có hoa
-      if(e.target===pw&&pw.classList.contains('pw-ask'))hidePwBox();
-    });
-    // Gõ phím khi đang ở nền hoa → hiện ô mật khẩu và gõ luôn; Esc → ẩn
+      if(f)fx(f,mode==='saver'?1200:600,0.25,true); // phóng nhẹ (ngắm hoa: chậm rãi)
+      else if(mode==='ready'&&pw.classList.contains('pw-ask'))hidePwBox(); // click chỗ trống → ẩn ô mật khẩu ngay
+      const ld={t:now,x:e.clientX,y:e.clientY,f};
+      ld.timer=setTimeout(()=>{
+        if(lastDown!==ld)return;lastDown=null;
+        if(mode==='ready'&&f)showPwBox();
+      },DBL_MS);
+      lastDown=ld;
+    },true);
+    // Máy tính — bàn phím:
+    //  • Ngắm hoa: Space → thoát
+    //  • Chờ mở khoá: Space 2 lần liên tiếp → ngắm hoa; gõ số → hiện ô mật khẩu và gõ luôn; Esc → ẩn ô
+    let lastSpace=0;
     document.addEventListener('keydown',e=>{
-      if(pw.style.display==='none')return;
+      if(pw.style.display==='none'||busy)return;
+      if(e.code==='Space'||e.key===' '){
+        e.preventDefault();
+        if(e.repeat)return;
+        const now=performance.now();
+        if(mode==='saver'){lastSpace=0;toggleMode(null);return;}
+        if(now-lastSpace<450){lastSpace=0;toggleMode(null);}
+        else lastSpace=now;
+        return;
+      }
       if(e.key==='Escape'){if(pw.classList.contains('pw-ask'))hidePwBox();return;}
       if(mode==='ready'&&!pw.classList.contains('pw-ask')&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&(e.key.length===1||e.key==='Enter'))showPwBox();
     });
