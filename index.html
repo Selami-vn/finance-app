@@ -167,6 +167,12 @@ select.if option{background:#1e1e28;}
 #pwInput:focus{border-color:#3ecf8e;}
 #pwBtn{width:100%;background:#3ecf8e;color:#0f1a15;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Be Vietnam Pro',sans-serif;}
 #pwErr{font-size:12px;color:#f56565;margin-top:8px;min-height:18px;}
+/* Màn khoá: chỉ có nền hoa. Máy tính: click hoa → hiện ô mật khẩu. Điện thoại: chạm hoa → vào app */
+#pwScreen:not(.pw-ask) #pwBox{display:none;}
+#pwScreen.pw-ask #pwBox{animation:pwIn .22s ease-out;}
+@keyframes pwIn{from{opacity:0;transform:translateY(8px) scale(.98);}to{opacity:1;transform:none;}}
+@media (hover:none) and (pointer:coarse){#pwBox{display:none!important;}}
+#pwBg img{pointer-events:auto;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-user-drag:none;}
 </style>
 </head>
 <body>
@@ -176,32 +182,71 @@ select.if option{background:#1e1e28;}
 <script>
 (function(){
   const bg=document.getElementById('pwBg');
+  const pw=document.getElementById('pwScreen');
   const src='https://raw.githubusercontent.com/Selami-vn/finance-app/main/logo.png';
   const isMobile=window.innerWidth<=480;
+  // Điện thoại/cảm ứng: chạm hoa là vào app. Máy tính: click hoa → hiện ô mật khẩu.
+  const TOUCH=window.matchMedia('(hover: none) and (pointer: coarse)').matches;
   const COUNT=isMobile?7:9;
   const flowers=[];
   let W=window.innerWidth, H=window.innerHeight;
+  let busy=false;
 
-  // Tạo img elements thay vì canvas
   for(let i=0;i<COUNT;i++){
     const el=document.createElement('img');
-    el.src=src;
-    el.style.cssText='position:absolute;object-fit:contain;pointer-events:none;will-change:transform;';
-    bg.appendChild(el);
+    el.src=src;el.draggable=false;el.alt='';el.decoding='async';
     const sz=isMobile?(75+Math.random()*45):(110+Math.random()*100);
-    flowers.push({
-      el,sz,
-      x:sz/2+Math.random()*(W-sz),
-      y:sz/2+Math.random()*(H-sz),
-      vx:(Math.random()-0.5)*(isMobile?1.6:1.1),
-      vy:(Math.random()-0.5)*(isMobile?1.6:1.1),
-      rot:Math.random()*360,
-      vr:(Math.random()-0.5)*0.7,
-      opacity:isMobile?(0.38+Math.random()*0.12):(0.32+Math.random()*0.13)
+    const f={el,sz,
+      x:sz/2+Math.random()*(W-sz), y:sz/2+Math.random()*(H-sz),
+      vx:(Math.random()-0.5)*(isMobile?1.6:1.1), vy:(Math.random()-0.5)*(isMobile?1.6:1.1),
+      rot:Math.random()*360, vr:(Math.random()-0.5)*0.7,
+      opacity:isMobile?(0.82+Math.random()*0.13):(0.78+Math.random()*0.15),
+      fxAt:0,fxDur:0,fxMax:0,fxPulse:false};
+    el.style.cssText='position:absolute;left:0;top:0;width:'+sz+'px;height:'+sz+'px;object-fit:contain;will-change:transform;cursor:pointer;opacity:'+f.opacity;
+    el.addEventListener('pointerdown',e=>{e.preventDefault();onFlower(f);});
+    el.addEventListener('contextmenu',e=>e.preventDefault());
+    bg.appendChild(el);flowers.push(f);
+  }
+
+  function fx(f,dur,max,pulse){f.fxAt=performance.now();f.fxDur=dur;f.fxMax=max;f.fxPulse=pulse;}
+  function onFlower(f){
+    if(busy)return;
+    if(TOUCH){ // điện thoại: bông hoa nở ra, màn hình mờ dần rồi vào app
+      busy=true;
+      try{navigator.vibrate&&navigator.vibrate(12);}catch(e){}
+      fx(f,400,0.9,false);
+      pw.style.transition='opacity .35s ease';
+      setTimeout(()=>{pw.style.opacity='0';},120);
+      setTimeout(()=>{
+        busy=false;f.fxAt=0;f.el.style.opacity=f.opacity;
+        if(typeof unlockApp==='function')unlockApp();
+        pw.style.transition='';pw.style.opacity='';
+      },480);
+    }else{ // máy tính: hoa nảy nhẹ, hiện ô mật khẩu
+      fx(f,500,0.3,true);
+      showPwBox();
+    }
+  }
+  function showPwBox(){
+    if(TOUCH)return;
+    pw.classList.add('pw-ask');
+    const i=document.getElementById('pwInput');if(i)i.focus();
+  }
+  function hidePwBox(){
+    pw.classList.remove('pw-ask');
+    const i=document.getElementById('pwInput');if(i){i.value='';i.blur();}
+    const e=document.getElementById('pwErr');if(e)e.textContent='';
+  }
+  window.showPwBox=showPwBox;window.hidePwBox=hidePwBox;
+  if(!TOUCH){
+    // Bấm ra chỗ trống → ẩn ô mật khẩu, quay lại chỉ có hoa
+    pw.addEventListener('pointerdown',e=>{if(e.target===pw&&pw.classList.contains('pw-ask'))hidePwBox();});
+    // Gõ phím khi đang ở nền hoa → hiện ô mật khẩu và gõ luôn; Esc → ẩn
+    document.addEventListener('keydown',e=>{
+      if(pw.style.display==='none')return;
+      if(e.key==='Escape'){if(pw.classList.contains('pw-ask'))hidePwBox();return;}
+      if(!pw.classList.contains('pw-ask')&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&(e.key.length===1||e.key==='Enter'))showPwBox();
     });
-    el.style.width=sz+'px';
-    el.style.height=sz+'px';
-    el.style.opacity=flowers[i].opacity;
   }
 
   window.addEventListener('resize',()=>{W=window.innerWidth;H=window.innerHeight;});
@@ -213,19 +258,18 @@ select.if option{background:#1e1e28;}
     if(dist<minD){
       const nx=dx/dist,ny=dy/dist;
       const dv=(a.vx-b.vx)*nx+(a.vy-b.vy)*ny;
-      if(dv>0){
-        a.vx-=dv*nx;a.vy-=dv*ny;
-        b.vx+=dv*nx;b.vy+=dv*ny;
-      }
+      if(dv>0){a.vx-=dv*nx;a.vy-=dv*ny;b.vx+=dv*nx;b.vy+=dv*ny;}
       const ov=(minD-dist)/2+1;
-      a.x-=nx*ov;a.y-=ny*ov;
-      b.x+=nx*ov;b.y+=ny*ov;
+      a.x-=nx*ov;a.y-=ny*ov;b.x+=nx*ov;b.y+=ny*ov;
     }
   }
 
-  function tick(){
+  // Chuyển động theo thời gian thật: tốc độ như nhau ở màn 60Hz hay 120Hz
+  let last=0;
+  function tick(now){
+    const dt=Math.min(3,(now-last)/16.667)||1;last=now;
     flowers.forEach(f=>{
-      f.x+=f.vx;f.y+=f.vy;f.rot+=f.vr;
+      f.x+=f.vx*dt;f.y+=f.vy*dt;f.rot+=f.vr*dt;
       const r=f.sz/2;
       if(f.x<r){f.x=r;f.vx=Math.abs(f.vx);}
       if(f.x>W-r){f.x=W-r;f.vx=-Math.abs(f.vx);}
@@ -236,12 +280,24 @@ select.if option{background:#1e1e28;}
       for(let j=i+1;j<flowers.length;j++)
         collide(flowers[i],flowers[j]);
     flowers.forEach(f=>{
-      f.el.style.transform=`translate(${f.x-f.sz/2}px,${f.y-f.sz/2}px) rotate(${f.rot}deg)`;
-      f.el.style.left='0';f.el.style.top='0';
+      let s=1;
+      if(f.fxAt){
+        const t=Math.min(1,(now-f.fxAt)/f.fxDur);
+        if(f.fxPulse){s=1+f.fxMax*Math.sin(Math.PI*t);if(t>=1)f.fxAt=0;}
+        else{s=1+f.fxMax*(1-Math.pow(1-t,3));f.el.style.opacity=Math.min(1,f.opacity+t);}
+      }
+      f.el.style.transform='translate3d('+(f.x-f.sz/2).toFixed(1)+'px,'+(f.y-f.sz/2).toFixed(1)+'px,0) rotate('+f.rot.toFixed(1)+'deg) scale('+s+')';
     });
-    requestAnimationFrame(tick);
   }
-  tick();
+  // Chỉ chạy khi màn hoa đang hiện; tối đa ~60 khung hình/giây (màn 120Hz không tốn gấp đôi)
+  let running=false,lastDraw=0;
+  function loop(now){
+    if(pw.style.display==='none'){running=false;return;}
+    if(now-lastDraw>=12){tick(now);lastDraw=now;}
+    requestAnimationFrame(loop);
+  }
+  window._pwAnimStart=function(){if(!running){running=true;last=performance.now();requestAnimationFrame(loop);}};
+  window._pwAnimStart();
 })();
 </script>
   <div id="pwBox"><div class="pw-inner">
@@ -2551,14 +2607,18 @@ function seedData(){
 // ── INIT ──
 
 // ── PASSWORD ──
+let _autoLockOn=false;
+function unlockApp(){
+  sessionStorage.setItem('selami_auth','1');
+  document.getElementById('pwScreen').style.display='none';
+  loadAndInit();
+  if(!_autoLockOn){_autoLockOn=true;initAutoLock();}else resetLockTimer();
+}
 function checkPw(){
   const val=document.getElementById('pwInput').value;
   if(!val)return;
   if(val==='142857'){
-    sessionStorage.setItem('selami_auth','1');
-    document.getElementById('pwScreen').style.display='none';
-    loadAndInit();
-    initAutoLock();
+    unlockApp();
   } else {
     document.getElementById('pwErr').textContent='Mật khẩu không đúng';
     document.getElementById('pwInput').value='';
@@ -2623,7 +2683,9 @@ function resetLockTimer(){
 
 function lockApp(){
   sessionStorage.removeItem('selami_auth');
-  document.getElementById('pwScreen').style.display='flex';
+  const pw=document.getElementById('pwScreen');
+  pw.style.display='flex';pw.style.opacity='';pw.classList.remove('pw-ask');
+  if(window._pwAnimStart)window._pwAnimStart();
   document.getElementById('pwInput').value='';
   document.getElementById('pwErr').textContent='';
   document.getElementById('pwSub').textContent='Màn hình đã khoá sau 3 phút không thao tác';
@@ -2640,7 +2702,7 @@ function checkAuth(){
   if(sessionStorage.getItem('selami_auth')==='1'){
     document.getElementById('pwScreen').style.display='none';
     loadAndInit();
-    initAutoLock();
+    _autoLockOn=true;initAutoLock();
   }
 }
 
