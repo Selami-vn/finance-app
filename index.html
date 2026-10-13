@@ -241,7 +241,7 @@ select.if option{background:#1e1e28;}
       if(lastDown&&now-lastDown.t<DBL_MS&&Math.hypot(e.clientX-lastDown.x,e.clientY-lastDown.y)<60){
         clearTimeout(lastDown.timer);lastDown=null;toggleMode(f);return;
       }
-      fx(f,450,0.25,true); // nảy nhẹ ngay
+      fx(f,mode==='saver'?1200:600,0.25,true); // phóng nhẹ (ngắm hoa: chậm rãi)
       const ld={t:now,x:e.clientX,y:e.clientY,f};
       ld.timer=setTimeout(()=>{if(lastDown===ld){lastDown=null;if(mode==='ready')showPwBox();}},DBL_MS);
       lastDown=ld;
@@ -250,11 +250,11 @@ select.if option{background:#1e1e28;}
   function onUp(e,f){
     const pr=f.press;release(f);
     if(!TOUCH||!pr||pr.fired||busy)return;
-    if(mode==='saver'){fx(f,450,0.28,true);return;} // ngắm hoa: chỉ phóng nhẹ
+    if(mode==='saver'){fx(f,1200,0.28,true);return;} // ngắm hoa: chỉ phóng nhẹ, chậm rãi
     enterApp(f);
   }
   function toggleMode(f){
-    fx(f,600,0.45,true);
+    fx(f,900,0.4,true);
     if(mode==='ready'){mode='saver';hidePwBox();buzz([15,40,15]);showHint('🌸 Ngắm hoa');}
     else{mode='ready';buzz(20);showHint('Đã thoát ngắm hoa');}
   }
@@ -335,20 +335,18 @@ select.if option{background:#1e1e28;}
     const ov=(minD-dist)/2+1;
     a.x-=nx*ov;a.y-=ny*ov;b.x+=nx*ov;b.y+=ny*ov;
   }
-  function pushByPointer(f){ // va chạm với con trỏ/ngón tay đang di chuyển
+  const PUSH_MAX=isMobile?2.2:2.6; // tốc độ tối đa khi bị rà trúng (px/khung) — chậm, êm mắt
+  function pushByPointer(f){ // con trỏ/ngón tay rà trúng: hoa nhẹ nhàng trôi ra xa
     const R=TOUCH?30:18;
     const dx=f.x-ptr.x,dy=f.y-ptr.y;
     const d=Math.hypot(dx,dy)||1;
     const minD=f.sz*0.42+R;
     if(d>=minD)return;
     const nx=dx/d,ny=dy/d;
-    const vn=(f.vx-ptr.vx)*nx+(f.vy-ptr.vy)*ny;
-    if(vn<0){f.vx-=1.8*vn*nx;f.vy-=1.8*vn*ny;}
-    const out=f.vx*nx+f.vy*ny, need=f.base*0.9;
-    if(out<need){f.vx+=nx*(need-out);f.vy+=ny*(need-out);}
-    f.x=ptr.x+nx*minD;f.y=ptr.y+ny*minD;
-    const sp=Math.hypot(f.vx,f.vy),MAX=11;
-    if(sp>MAX){f.vx*=MAX/sp;f.vy*=MAX/sp;}
+    const ps=Math.hypot(ptr.vx,ptr.vy);
+    const target=Math.min(PUSH_MAX,f.base*1.6+ps*0.12);
+    f.vx+=(nx*target-f.vx)*0.25;f.vy+=(ny*target-f.vy)*0.25; // xoay hướng dần dần, không giật
+    const ov=minD-d;f.x+=nx*ov*0.12;f.y+=ny*ov*0.12;
   }
 
   // Chuyển động theo thời gian thật: tốc độ như nhau ở màn 60Hz hay 120Hz
@@ -361,7 +359,7 @@ select.if option{background:#1e1e28;}
       if(ptrActive)pushByPointer(f);
       // bị đẩy nhanh thì chậm dần, chậm quá thì nhanh dần về tốc độ thường
       const sp=Math.hypot(f.vx,f.vy);
-      if(sp>f.base*1.02){const k=Math.max(f.base/sp,Math.pow(0.985,dt));f.vx*=k;f.vy*=k;}
+      if(sp>f.base*1.02){const k=Math.max(f.base/sp,Math.pow(0.992,dt));f.vx*=k;f.vy*=k;}
       else if(sp<f.base*0.98){if(sp<0.01){f.vx=f.base;}else{const k=Math.min(f.base/sp,Math.pow(1.01,dt));f.vx*=k;f.vy*=k;}}
       f.x+=f.vx*dt;f.y+=f.vy*dt;f.rot+=f.vr*dt;
       const r=f.sz/2;
@@ -408,7 +406,7 @@ select.if option{background:#1e1e28;}
 <div class="header">
   <div><div class="logo">Ví <span>cá nhân</span></div><div class="hdate" id="hdate"></div></div>
   <div style="display:flex;gap:8px;align-items:center">
-    <button id="undoBtn" onclick="undoAction()" title="Chưa có gì để hoàn tác" style="background:var(--card2);border:1px solid var(--border);border-radius:9px;width:34px;height:34px;font-size:16px;cursor:pointer;color:var(--text2);display:flex;align-items:center;justify-content:center;opacity:0.35;transition:opacity .2s">↩</button>
+    <button id="undoBtn" onclick="undoAction()" title="Chưa có gì để hoàn tác" style="background:var(--card2);border:1px solid var(--border);border-radius:9px;width:34px;height:34px;font-size:16px;cursor:pointer;color:var(--text2);display:none;align-items:center;justify-content:center">↩</button>
     <button id="lockBtn" onclick="lockApp(true)" title="Khoá app" aria-label="Khoá app" style="background:var(--card2);border:1px solid var(--border);border-radius:9px;width:34px;height:34px;font-size:16px;cursor:pointer;color:var(--text2);display:flex;align-items:center;justify-content:center;padding:0;overflow:hidden"><img src="logo.png" alt="" style="width:26px;height:26px;object-fit:contain;pointer-events:none" draggable="false"></button>
   </div>
 </div>
@@ -1016,6 +1014,7 @@ function recordUndo(){
   }
   _lastSnap=JSON.stringify(S);_lastKey=key;
   _typedInField=false;
+  _lastChangeAt=Date.now();
   updateUndoBtn();
 }
 // ── Lưu lịch sử undo vào trình duyệt để tải lại trang vẫn hoàn tác được ──
@@ -1050,10 +1049,21 @@ function _loadUndo(raw){
   }catch(e){}
   updateUndoBtn();
 }
+// Nút ↩ chỉ hiện khi đang nhập/điều chỉnh: vừa thay đổi dữ liệu (trong 60 giây)
+// hoặc đang ở ô nhập / form — và còn bước để hoàn tác. Cmd+Z vẫn luôn dùng được.
+let _lastChangeAt=0;
+const UNDO_SHOW_MS=60000;
+function _editingNow(){
+  const a=document.activeElement;
+  if(a&&a.matches&&a.matches('input,select,textarea')&&!a.closest('#pwScreen'))return true;
+  return !!document.querySelector('[id^="modal-"].open');
+}
 function updateUndoBtn(){
   const b=document.getElementById('undoBtn');if(!b)return;
   const n=_undoStack.length;
-  b.style.opacity=n?'1':'0.35';
+  const show=n>0&&(Date.now()-_lastChangeAt<UNDO_SHOW_MS||_editingNow());
+  if(show&&b.style.display!=='flex'){b.style.display='flex';b.animate&&b.animate([{opacity:0,transform:'scale(.8)'},{opacity:1,transform:'none'}],{duration:180,easing:'ease-out'});}
+  else if(!show&&b.style.display!=='none')b.style.display='none';
   const last=n?_undoStack[n-1].label:'';
   b.title=n?('Hoàn tác'+(last?': '+last:'')+' (⌘Z) — còn '+n+' bước'):'Chưa có gì để hoàn tác';
 }
@@ -1066,6 +1076,7 @@ function undoAction(){
   Object.keys(S).forEach(k=>delete S[k]);
   Object.assign(S,prev);
   _lastSnap=s;_lastKey=_snapKey();
+  _lastChangeAt=Date.now();
   _flushSave();
   // Đóng modal/form sửa đang mở để không ghi đè lên dữ liệu vừa hoàn tác
   document.querySelectorAll('[id^="modal-"].open').forEach(m=>m.classList.remove('open'));
@@ -1080,7 +1091,9 @@ function undoAction(){
   toast('↩ Đã hoàn tác'+(label?': '+label:'')+(_undoStack.length?' (còn '+_undoStack.length+' bước)':''),'ok');
 }
 // Cmd+Z / Ctrl+Z — nếu đang gõ chữ trong ô nhập thì để trình duyệt hoàn tác chữ
-document.addEventListener('focusin',()=>{_typedInField=false;});
+document.addEventListener('focusin',()=>{_typedInField=false;updateUndoBtn();});
+document.addEventListener('focusout',()=>setTimeout(updateUndoBtn,0));
+setInterval(updateUndoBtn,2000);
 document.addEventListener('input',e=>{if(e.target&&e.target.matches&&e.target.matches('input,textarea'))_typedInField=true;},true);
 document.addEventListener('keydown',e=>{
   if(!(e.metaKey||e.ctrlKey)||e.shiftKey||e.altKey)return;
