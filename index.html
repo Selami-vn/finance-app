@@ -278,9 +278,10 @@ select.if option{background:#1e1e28;}
     //  • Chờ mở khoá: click hoa → ô mật khẩu; double click hoa → ngắm hoa; click chỗ trống → ẩn ô mật khẩu
     //  • Ngắm hoa: click hoa → hoa phóng nhẹ; double click BẤT KỲ ĐÂU → thoát
     const flowerOf=t=>flowers.find(f=>f.el===t)||null;
+    const nearFlower=(x,y)=>{let best=null,bd=1e9;flowers.forEach(f=>{const d=Math.hypot(f.x-x,f.y-y)-f.sz*0.5;if(d<40&&d<bd){bd=d;best=f;}});return best;};
     pw.addEventListener('pointerdown',e=>{
       if(busy||e.target.closest('#pwBox'))return; // bấm trong ô mật khẩu: bỏ qua
-      const now=performance.now(), f=flowerOf(e.target);
+      const now=performance.now(), f=flowerOf(e.target)||nearFlower(e.clientX,e.clientY);
       if(lastDown&&now-lastDown.t<DBL_MS&&Math.hypot(e.clientX-lastDown.x,e.clientY-lastDown.y)<60){
         clearTimeout(lastDown.timer);const f0=f||lastDown.f;lastDown=null;
         if(mode==='saver'||f0)toggleMode(f0);
@@ -350,7 +351,9 @@ select.if option{background:#1e1e28;}
     const ov=(minD-dist)/2+1;
     a.x-=nx*ov;a.y-=ny*ov;b.x+=nx*ov;b.y+=ny*ov;
   }
-  const PUSH_MAX=isMobile?2.2:2.6; // tốc độ tối đa khi bị rà trúng (px/khung) — chậm, êm mắt
+  // Khi bị rà trúng — điện thoại: trôi nhẹ, chậm; máy tính: bật nhanh và xa hơn
+  const PUSH=TOUCH?{max:isMobile?2.2:2.6,base:1.6,ptr:0.12,turn:0.25,decay:0.992}
+                  :{max:6,base:2.4,ptr:0.3,turn:0.6,decay:0.994};
   function pushByPointer(f){ // con trỏ/ngón tay rà trúng: hoa nhẹ nhàng trôi ra xa
     const R=TOUCH?30:18;
     const dx=f.x-ptr.x,dy=f.y-ptr.y;
@@ -359,8 +362,8 @@ select.if option{background:#1e1e28;}
     if(d>=minD)return;
     const nx=dx/d,ny=dy/d;
     const ps=Math.hypot(ptr.vx,ptr.vy);
-    const target=Math.min(PUSH_MAX,f.base*1.6+ps*0.12);
-    f.vx+=(nx*target-f.vx)*0.25;f.vy+=(ny*target-f.vy)*0.25; // xoay hướng dần dần, không giật
+    const target=Math.min(PUSH.max,f.base*PUSH.base+ps*PUSH.ptr);
+    f.vx+=(nx*target-f.vx)*PUSH.turn;f.vy+=(ny*target-f.vy)*PUSH.turn; // đổi hướng (điện thoại: từ từ; máy tính: dứt khoát)
     const ov=minD-d;f.x+=nx*ov*0.12;f.y+=ny*ov*0.12;
   }
 
@@ -374,7 +377,7 @@ select.if option{background:#1e1e28;}
       if(ptrActive)pushByPointer(f);
       // bị đẩy nhanh thì chậm dần, chậm quá thì nhanh dần về tốc độ thường
       const sp=Math.hypot(f.vx,f.vy);
-      if(sp>f.base*1.02){const k=Math.max(f.base/sp,Math.pow(0.992,dt));f.vx*=k;f.vy*=k;}
+      if(sp>f.base*1.02){const k=Math.max(f.base/sp,Math.pow(PUSH.decay,dt));f.vx*=k;f.vy*=k;}
       else if(sp<f.base*0.98){if(sp<0.01){f.vx=f.base;}else{const k=Math.min(f.base/sp,Math.pow(1.01,dt));f.vx*=k;f.vy*=k;}}
       f.x+=f.vx*dt;f.y+=f.vy*dt;f.rot+=f.vr*dt;
       const r=f.sz/2;
